@@ -8,16 +8,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Mic as MicIcon, AlertCircle, Volume2, UploadCloud, DownloadCloud, Copy, Settings2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2, Mic as MicIcon, AlertCircle, Volume2, UploadCloud, DownloadCloud, Copy, Settings2, SendHorizonal, User, Bot } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { TextToSpeechInput } from "@/ai/flows/text-to-speech-flow";
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { speechToText } from "@/ai/flows/speech-to-text-flow";
+import { getAgentResponse } from "@/ai/flows/conversational-agent-flow";
 import { useToast } from "@/hooks/use-toast"; 
+import { cn } from "@/lib/utils";
 
 interface VoiceToolsModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface ConversationMessage {
+  id: string;
+  speaker: 'user' | 'agent';
+  text: string;
 }
 
 export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProps) {
@@ -38,11 +47,21 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
   const [sttLoading, setSttLoading] = useState(false);
   const [sttError, setSttError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<string | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
+  const [isRecording, setIsRecording] = useState(false); // For STT Tab
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
+
+  // Voice Assistant States
+  const [conversation, setConversation] = useState<ConversationMessage[]>([]);
+  const [isAssistantListening, setIsAssistantListening] = useState(false);
+  const [isAgentReplying, setIsAgentReplying] = useState(false); // TTS for agent
+  const [assistantProcessing, setAssistantProcessing] = useState(false); // Genkit call
+  const [assistantError, setAssistantError] = useState<string | null>(null);
+  const conversationScrollAreaRef = useRef<HTMLDivElement>(null);
+  const assistantAudioChunksRef = useRef<Blob[]>([]);
+  const assistantMediaRecorderRef = useRef<MediaRecorder | null>(null);
 
 
   useEffect(() => {
@@ -51,18 +70,25 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
         const availableVoices = window.speechSynthesis.getVoices();
         setVoices(availableVoices);
         if (availableVoices.length > 0 && !selectedVoiceURI) {
-          const defaultEngVoice = availableVoices.find(voice => voice.lang.startsWith('en') && voice.default) 
-            || availableVoices.find(voice => voice.lang.startsWith('en')) 
-            || availableVoices[0];
-          if (defaultEngVoice) {
-            setSelectedVoiceURI(defaultEngVoice.voiceURI);
+          // Prioritize English voices, then default, then first available
+          const preferredVoice = 
+            availableVoices.find(voice => voice.lang.toLowerCase().startsWith('en-us') && voice.default) ||
+            availableVoices.find(voice => voice.lang.toLowerCase().startsWith('en-gb') && voice.default) ||
+            availableVoices.find(voice => voice.lang.toLowerCase().startsWith('en') && voice.default) ||
+            availableVoices.find(voice => voice.lang.toLowerCase().startsWith('en-us')) ||
+            availableVoices.find(voice => voice.lang.toLowerCase().startsWith('en-gb')) ||
+            availableVoices.find(voice => voice.lang.toLowerCase().startsWith('en')) ||
+            (availableVoices.find(voice => voice.lang.toLowerCase().startsWith('te')) && availableVoices.find(voice => voice.lang.toLowerCase().startsWith('te'))) || // Telugu
+            availableVoices.find(voice => voice.default) || 
+            availableVoices[0];
+          if (preferredVoice) {
+            setSelectedVoiceURI(preferredVoice.voiceURI);
           }
         }
       }
     };
 
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-        // onvoiceschanged might fire early, or voices might already be available
         const initialVoices = window.speechSynthesis.getVoices();
         if (initialVoices.length > 0) {
             loadVoices();
@@ -74,102 +100,216 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = null;
+        window.speechSynthesis.cancel(); // Stop any ongoing speech
       }
       if (audioPreviewUrl) {
         URL.revokeObjectURL(audioPreviewUrl);
       }
+      // Stop any active recordings if modal is closed
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+      }
+      if (assistantMediaRecorderRef.current && assistantMediaRecorderRef.current.state === "recording") {
+        assistantMediaRecorderRef.current.stop();
+      }
     };
-  }, [selectedVoiceURI]); // Re-run if selectedVoiceURI changes, or for initial load.
+  }, [selectedVoiceURI, audioPreviewUrl]);
 
-  const handleSpeak = async () => {
+  useEffect(() => {
+    if (conversationScrollAreaRef.current) {
+      conversationScrollAreaRef.current.scrollTop = conversationScrollAreaRef.current.scrollHeight;
+    }
+  }, [conversation]);
+
+
+  const handleSpeakTTS = async () => {
     setTtsLoading(true);
     setTtsError(null);
     setGeneratedTextToSpeak(null);
+    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
+
     try {
       const inputForFlow: TextToSpeechInput = { text: ttsInput.trim() !== "" ? ttsInput : undefined };
       const result = await textToSpeech(inputForFlow);
       setGeneratedTextToSpeak(result.textToSpeak);
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        const utterance = new SpeechSynthesisUtterance(result.textToSpeak);
-        if (selectedVoiceURI) {
-          const voice = voices.find(v => v.voiceURI === selectedVoiceURI);
-          if (voice) utterance.voice = voice;
-        }
-        utterance.rate = speechRate;
-        utterance.pitch = speechPitch;
-        utterance.onerror = (event) => {
-          console.error("SpeechSynthesisUtterance.onerror", event);
-          setTtsError("Could not play audio. Your browser might not support speech synthesis or has an issue.");
-          toast({ title: "Speech Error", description: "Could not play audio. Check browser support or permissions.", variant: "destructive" });
-        };
-        window.speechSynthesis.speak(utterance);
-      } else {
-        setTtsError("Speech synthesis is not supported in your browser.");
-        toast({ title: "Unsupported Feature", description: "Speech synthesis is not supported in your browser.", variant: "destructive" });
-      }
+      speakText(result.textToSpeak, () => setTtsLoading(false), (err) => {
+        setTtsError(err);
+        setTtsLoading(false);
+      });
     } catch (error) {
       console.error("Error in text-to-speech flow:", error);
-      setTtsError("Failed to generate speech. Please try again.");
-      toast({ title: "TTS Error", description: "Failed to generate speech. Please try again.", variant: "destructive" });
+      const errMsg = error instanceof Error ? error.message : "Failed to generate speech.";
+      setTtsError(`TTS Flow Error: ${errMsg}`);
+      toast({ title: "TTS Error", description: `Failed to generate speech. ${errMsg}`, variant: "destructive" });
+      setTtsLoading(false);
     }
-    setTtsLoading(false);
   };
 
-  const startRecording = async () => {
+  const speakText = (text: string, onEndCallback?: () => void, onErrorCallback?: (errorMsg: string) => void) => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      if (selectedVoiceURI) {
+        const voice = voices.find(v => v.voiceURI === selectedVoiceURI);
+        if (voice) utterance.voice = voice;
+      }
+      utterance.rate = speechRate;
+      utterance.pitch = speechPitch;
+      utterance.onend = () => {
+        if (onEndCallback) onEndCallback();
+      };
+      utterance.onerror = (event) => {
+        console.error("SpeechSynthesisUtterance.onerror", event);
+        const errorMsg = "Could not play audio. Your browser might not support speech synthesis or has an issue.";
+        if (onErrorCallback) onErrorCallback(errorMsg);
+        else toast({ title: "Speech Error", description: errorMsg, variant: "destructive" });
+      };
+      window.speechSynthesis.speak(utterance);
+    } else {
+      const errorMsg = "Speech synthesis is not supported in your browser.";
+      if (onErrorCallback) onErrorCallback(errorMsg);
+      else toast({ title: "Unsupported Feature", description: errorMsg, variant: "destructive" });
+      if (onEndCallback) onEndCallback(); // still call onEnd to unlock UI
+    }
+  };
+
+
+  const startSTTRecording = async () => {
     setSttError(null);
     setTranscript(null);
     if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
     setAudioPreviewUrl(null);
     setRecordedAudioBlob(null);
+    await startRecordingLogic(mediaRecorderRef, audioChunksRef, setIsRecording, setRecordedAudioBlob, setAudioPreviewUrl, async (audioDataUri) => {
+      setSttLoading(true);
+      try {
+        const result = await speechToText({ audioDataUri });
+        setTranscript(result.transcript);
+      } catch (error) {
+        console.error("Error in STT flow:", error);
+        const errMsg = error instanceof Error ? error.message : "Failed to transcribe audio.";
+        setSttError(`STT Flow Error: ${errMsg}`);
+        toast({ title: "STT Error", description: `Failed to transcribe. ${errMsg}`, variant: "destructive" });
+      }
+      setSttLoading(false);
+    }, (err) => {
+      setSttError(err);
+      toast({ title: "Microphone Error", description: err, variant: "destructive" });
+    });
+  };
 
+  const stopSTTRecording = () => {
+    stopRecordingLogic(mediaRecorderRef, setIsRecording);
+  };
+
+
+  const startVoiceAssistantListening = async () => {
+    setAssistantError(null);
+    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
+    setIsAgentReplying(false);
+
+    await startRecordingLogic(assistantMediaRecorderRef, assistantAudioChunksRef, setIsAssistantListening, null, null, async (audioDataUri) => {
+      setAssistantProcessing(true); // For STT part of assistant
+      try {
+        const sttResult = await speechToText({ audioDataUri });
+        if (sttResult.transcript && sttResult.transcript.trim() !== "") {
+          setConversation(prev => [...prev, { id: Date.now().toString(), speaker: 'user', text: sttResult.transcript }]);
+          
+          // Now get agent response
+          const agentResponse = await getAgentResponse({ userMessage: sttResult.transcript });
+          setConversation(prev => [...prev, { id: (Date.now()+1).toString(), speaker: 'agent', text: agentResponse.reply }]);
+          
+          setIsAgentReplying(true);
+          speakText(agentResponse.reply, () => setIsAgentReplying(false), (err) => {
+            setAssistantError(`Agent TTS Error: ${err}`);
+            setIsAgentReplying(false);
+          });
+
+        } else {
+           setAssistantError("No speech detected or transcription was empty.");
+        }
+      } catch (error) {
+        console.error("Error in Voice Assistant flow:", error);
+        const errMsg = error instanceof Error ? error.message : "An unknown error occurred.";
+        setAssistantError(`Assistant Error: ${errMsg}`);
+        toast({ title: "Assistant Error", description: errMsg, variant: "destructive" });
+      }
+      setAssistantProcessing(false);
+    }, (err) => {
+      setAssistantError(err);
+      toast({ title: "Microphone Error", description: err, variant: "destructive" });
+    });
+  };
+
+  const stopVoiceAssistantListening = () => {
+    stopRecordingLogic(assistantMediaRecorderRef, setIsAssistantListening);
+  };
+
+
+  const startRecordingLogic = async (
+    recorderRef: React.MutableRefObject<MediaRecorder | null>,
+    chunksRef: React.MutableRefObject<Blob[]>,
+    setIsRecState: React.Dispatch<React.SetStateAction<boolean>>,
+    setBlobState: React.Dispatch<React.SetStateAction<Blob | null>> | null,
+    setPreviewUrlState: React.Dispatch<React.SetStateAction<string | null>> | null,
+    onStopCallback: (audioDataUri: string) => Promise<void>,
+    onErrorCallback: (errorMsg: string) => void
+  ) => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        audioChunksRef.current = [];
+        // Ensure correct MIME type. Opus is good for quality and size, webm is widely supported.
+        // Let browser pick if 'audio/webm; codecs=opus' not supported.
+        const options = MediaRecorder.isTypeSupported('audio/webm; codecs=opus') ? 
+                        { mimeType: 'audio/webm; codecs=opus' } : 
+                        MediaRecorder.isTypeSupported('audio/webm') ? 
+                        { mimeType: 'audio/webm'} : {};
 
-        mediaRecorderRef.current.ondataavailable = (event) => {
-          audioChunksRef.current.push(event.data);
+        recorderRef.current = new MediaRecorder(stream, options);
+        chunksRef.current = [];
+
+        recorderRef.current.ondataavailable = (event) => {
+          chunksRef.current.push(event.data);
         };
 
-        mediaRecorderRef.current.onstop = async () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' }); // Ensure MIME type matches recorder
-          setRecordedAudioBlob(audioBlob);
+        recorderRef.current.onstop = async () => {
+          const audioBlob = new Blob(chunksRef.current, { type: recorderRef.current?.mimeType || 'audio/webm' });
+          if (setBlobState) setBlobState(audioBlob);
           const audioDataUri = await blobToDataURI(audioBlob);
-          setAudioPreviewUrl(URL.createObjectURL(audioBlob));
+          if (setPreviewUrlState && audioBlob.size > 0) setPreviewUrlState(URL.createObjectURL(audioBlob));
           
-          setSttLoading(true);
-          try {
-            const result = await speechToText({ audioDataUri });
-            setTranscript(result.transcript);
-          } catch (error) {
-            console.error("Error in speech-to-text flow:", error);
-            setSttError("Failed to transcribe audio. Please try again.");
-            toast({ title: "STT Error", description: "Failed to transcribe audio. Please try again.", variant: "destructive" });
+          if (audioBlob.size > 0) {
+            await onStopCallback(audioDataUri);
+          } else {
+            onErrorCallback("No audio data recorded. Please try again.");
           }
-          setSttLoading(false);
-          stream.getTracks().forEach(track => track.stop()); // Stop media stream tracks
+          stream.getTracks().forEach(track => track.stop());
         };
 
-        mediaRecorderRef.current.start();
-        setIsRecording(true);
+        recorderRef.current.start();
+        setIsRecState(true);
       } catch (err) {
         console.error("Error accessing microphone:", err);
-        setSttError("Could not access microphone. Please check permissions.");
-        toast({ title: "Microphone Error", description: "Could not access microphone. Please check permissions.", variant: "destructive" });
+        const errMsg = "Could not access microphone. Please check permissions.";
+        onErrorCallback(errMsg);
+        setIsRecState(false); // Ensure state is reset
       }
     } else {
-      setSttError("Audio recording is not supported in your browser.");
-      toast({ title: "Unsupported Feature", description: "Audio recording is not supported in your browser.", variant: "destructive" });
+      const errMsg = "Audio recording is not supported in your browser.";
+      onErrorCallback(errMsg);
+      setIsRecState(false); // Ensure state is reset
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop();
+  const stopRecordingLogic = (
+    recorderRef: React.MutableRefObject<MediaRecorder | null>,
+    setIsRecState: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    if (recorderRef.current && recorderRef.current.state === "recording") {
+      recorderRef.current.stop();
     }
-    setIsRecording(false); // This should be set here, not only in onstop
+    setIsRecState(false);
   };
+
 
   const blobToDataURI = (blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -227,29 +367,34 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       setTtsLoading(false);
       setTtsError(null);
       setGeneratedTextToSpeak(null);
-      setSpeechRate(1);
-      setSpeechPitch(1);
-      // voices and selectedVoiceURI are generally fine to persist if modal reopens
+      // speechRate, speechPitch, voices, selectedVoiceURI can persist
       
       // Reset STT states
       setSttLoading(false);
       setSttError(null);
       setTranscript(null);
-      if (isRecording) { // Ensure recording stops if modal is closed while recording
-         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-            mediaRecorderRef.current.stop();
-            mediaRecorderRef.current.stream?.getTracks().forEach(track => track.stop());
-        }
-      }
-      setIsRecording(false);
+      if (isRecording) stopSTTRecording();
       audioChunksRef.current = [];
       if (audioPreviewUrl) {
         URL.revokeObjectURL(audioPreviewUrl);
         setAudioPreviewUrl(null);
       }
       setRecordedAudioBlob(null);
+
+      // Reset Assistant states
+      setConversation([]);
+      if(isAssistantListening) stopVoiceAssistantListening();
+      setIsAgentReplying(false);
+      setAssistantProcessing(false);
+      setAssistantError(null);
+      assistantAudioChunksRef.current = [];
+
+      // Cancel any ongoing speech synthesis
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
     }
-  }, [isOpen, audioPreviewUrl, isRecording]);
+  }, [isOpen, isRecording, isAssistantListening, audioPreviewUrl]); // Dependencies ensure cleanup
 
 
   return (
@@ -258,15 +403,16 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
         <DialogHeader>
           <DialogTitle className="text-2xl">AI Voice Tools</DialogTitle>
           <DialogDescription>
-            Experiment with Text-to-Speech and Speech-to-Text functionalities powered by Nedzo AI. 
+            Experiment with Text-to-Speech, Speech-to-Text, and our AI Voice Assistant. 
             Voice options are provided by your browser.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="flex-grow overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="tts">Text-to-Speech</TabsTrigger>
             <TabsTrigger value="stt">Speech-to-Text</TabsTrigger>
+            <TabsTrigger value="assistant">AI Voice Assistant</TabsTrigger>
           </TabsList>
           
           <TabsContent value="tts" className="flex-grow overflow-y-auto p-1 mt-0 space-y-4">
@@ -319,12 +465,11 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
                 </div>
               </div>
 
-              <Button onClick={handleSpeak} disabled={ttsLoading} className="w-full sm:w-auto">
+              <Button onClick={handleSpeakTTS} disabled={ttsLoading} className="w-full sm:w-auto">
                 {ttsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Volume2 className="mr-2 h-4 w-4" />}
                 Generate & Speak
               </Button>
               <p className="text-xs text-muted-foreground">Note: Actual speech audio download is not available via browser API. You can download the text.</p>
-
 
               {generatedTextToSpeak && !ttsLoading && (
                 <div className="mt-4 p-3 bg-muted rounded-md space-y-2">
@@ -352,12 +497,11 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
           <TabsContent value="stt" className="flex-grow overflow-y-auto p-1 mt-0">
             <div className="space-y-4 p-4">
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button onClick={startRecording} disabled={isRecording || sttLoading} className="flex-1">
+                <Button onClick={startSTTRecording} disabled={isRecording || sttLoading} className="flex-1">
                   <MicIcon className="mr-2 h-4 w-4" />
                   {isRecording ? "Recording..." : "Start Recording"}
                 </Button>
-                <Button onClick={stopRecording} disabled={!isRecording || sttLoading} variant="outline" className="flex-1">
-                  {/* Use a different icon or just text for Stop */}
+                <Button onClick={stopSTTRecording} disabled={!isRecording || sttLoading} variant="outline" className="flex-1">
                   <MicIcon className="mr-2 h-4 w-4 opacity-50" /> 
                   Stop Recording
                 </Button>
@@ -411,6 +555,75 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="assistant" className="flex-grow overflow-y-auto p-1 mt-0 flex flex-col">
+            <div className="p-4 flex flex-col flex-grow space-y-4">
+              <ScrollArea className="flex-grow h-64 border rounded-md p-3" ref={conversationScrollAreaRef}>
+                {conversation.length === 0 && (
+                  <p className="text-muted-foreground text-center py-10">
+                    Click the microphone to start talking to the Nedzo AI Assistant.
+                  </p>
+                )}
+                {conversation.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={cn(
+                      "mb-3 p-3 rounded-lg max-w-[85%] flex items-start gap-2",
+                      msg.speaker === 'user' ? 'bg-primary/10 text-primary-foreground ml-auto rounded-br-none' : 'bg-muted text-foreground mr-auto rounded-bl-none'
+                    )}
+                  >
+                    {msg.speaker === 'user' ? <User className="h-5 w-5 text-primary flex-shrink-0"/> : <Bot className="h-5 w-5 text-accent flex-shrink-0" />}
+                    <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                  </div>
+                ))}
+                 {isAssistantListening && (
+                    <div className="flex items-center justify-center p-2 text-primary">
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <span>Listening...</span>
+                    </div>
+                 )}
+                 {assistantProcessing && !isAssistantListening && ( // Show processing after listening stops
+                    <div className="flex items-center justify-center p-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <span>Thinking...</span>
+                    </div>
+                 )}
+                {isAgentReplying && (
+                    <div className="flex items-center justify-center p-2 text-accent">
+                        <Volume2 className="h-4 w-4 mr-2 animate-pulse" />
+                        <span>Speaking...</span>
+                    </div>
+                )}
+
+              </ScrollArea>
+              
+              {assistantError && (
+                <div className="p-3 bg-destructive/10 text-destructive rounded-md flex items-center">
+                  <AlertCircle className="h-5 w-5 mr-2" />
+                  <p className="text-sm">{assistantError}</p>
+                </div>
+              )}
+
+              <div className="mt-auto flex justify-center">
+                <Button
+                  onClick={isAssistantListening ? stopVoiceAssistantListening : startVoiceAssistantListening}
+                  disabled={assistantProcessing || isAgentReplying}
+                  size="lg"
+                  className={cn("rounded-full p-6 w-20 h-20", isAssistantListening ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90")}
+                  aria-label={isAssistantListening ? "Stop listening" : "Start listening"}
+                >
+                  {isAssistantListening ? (
+                    <MicIcon className="h-8 w-8 animate-pulse" />
+                  ) : assistantProcessing ? (
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  ) : (
+                    <MicIcon className="h-8 w-8" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
         </Tabs>
 
         <DialogFooter className="mt-auto pt-4 border-t">
