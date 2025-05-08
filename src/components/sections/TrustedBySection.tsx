@@ -1,11 +1,11 @@
 import Image from 'next/image';
 
 const partners = [
-  { name: 'Zapier', logoSrc: 'https://picsum.photos/120/40', hint: 'zapier logo' },
-  { name: 'Google', logoSrc: 'https://picsum.photos/120/40', hint: 'google logo' },
-  { name: 'Stripe', logoSrc: 'https://picsum.photos/120/40', hint: 'stripe logo' },
-  { name: 'HighLevel', logoSrc: 'https://picsum.photos/120/40', hint: 'highlevel logo' },
-  { name: 'Calendly', logoSrc: 'https://picsum.photos/120/40', hint: 'calendly logo' },
+  { name: 'Zapier', logoSrc: 'https://picsum.photos/120/40?random=1', hint: 'Zapier logo' },
+  { name: 'Google', logoSrc: 'https://picsum.photos/120/40?random=2', hint: 'Google logo' },
+  { name: 'Stripe', logoSrc: 'https://picsum.photos/120/40?random=3', hint: 'Stripe logo' },
+  { name: 'HighLevel', logoSrc: 'https://picsum.photos/120/40?random=4', hint: 'HighLevel logo' },
+  { name: 'Calendly', logoSrc: 'https://picsum.photos/120/40?random=5', hint: 'Calendly logo' },
 ];
 
 export default function TrustedBySection() {
@@ -23,7 +23,7 @@ export default function TrustedBySection() {
                 alt={`${partner.name} logo`}
                 width={120}
                 height={40}
-                className="object-contain filter grayscale"
+                className="object-contain filter grayscale hover:grayscale-0"
                 data-ai-hint={partner.hint}
               />
             </div>

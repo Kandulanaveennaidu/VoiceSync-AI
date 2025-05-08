@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Users, Globe } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import Link from 'next/link';
 
 export default function GlobalTrustSection() {
@@ -14,13 +14,14 @@ export default function GlobalTrustSection() {
         <p className="text-lg text-muted-foreground mb-10 max-w-3xl mx-auto">
           Nedzo AI is built on a secure and scalable infrastructure, trusted by businesses globally to handle sensitive communications with utmost care and efficiency.
         </p>
-        <div className="relative mb-12 h-64 md:h-96 opacity-50">
+        <div className="relative mb-12 h-64 md:h-96">
           <Image
-            src="https://picsum.photos/1000/400" 
-            alt="World map with user icons"
+            src="https://picsum.photos/seed/worldmap/1000/400" 
+            alt="Abstract world map with connection lines"
             layout="fill"
             objectFit="contain"
-            data-ai-hint="world map connections"
+            data-ai-hint="global connections"
+            className="opacity-75"
           />
         </div>
         <Button size="lg" asChild>
