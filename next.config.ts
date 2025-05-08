@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -17,6 +18,18 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Prevent bundling of Node.js specific modules for the client
+      // by providing a fallback that resolves to an empty module.
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        async_hooks: false, 
+      };
+    }
+    // Important: return the modified config
+    return config;
   },
 };
 
