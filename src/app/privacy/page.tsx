@@ -1,10 +1,19 @@
 
+"use client";
+import { useState, useEffect } from 'react';
+
 export default function PrivacyPage() {
+  const [lastUpdatedDate, setLastUpdatedDate] = useState('');
+
+  useEffect(() => {
+    setLastUpdatedDate(new Date().toLocaleDateString());
+  }, []);
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-32 min-h-screen">
       <h1 className="text-4xl font-bold text-foreground mb-8">Privacy Policy</h1>
       <div className="prose prose-lg max-w-none text-muted-foreground">
-        <p>Last updated: {new Date().toLocaleDateString()}</p>
+        <p>Last updated: {lastUpdatedDate || 'Loading...'}</p>
 
         <p>
           Nedzo AI Calls ("us", "we", or "our") operates the Nedzo AI Calls website and service (the "Service"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data.

@@ -1,10 +1,19 @@
 
+"use client";
+import { useState, useEffect } from 'react';
+
 export default function CookiesPage() {
+  const [lastUpdatedDate, setLastUpdatedDate] = useState('');
+
+  useEffect(() => {
+    setLastUpdatedDate(new Date().toLocaleDateString());
+  }, []);
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-32 min-h-screen">
       <h1 className="text-4xl font-bold text-foreground mb-8">Cookie Policy</h1>
       <div className="prose prose-lg max-w-none text-muted-foreground">
-        <p>Last updated: {new Date().toLocaleDateString()}</p>
+        <p>Last updated: {lastUpdatedDate || 'Loading...'}</p>
 
         <p>
           This Cookie Policy explains what cookies are and how Nedzo AI Calls ("we", "us", or "our") uses them on our website and Service. You should read this policy so you can understand what type of cookies we use, the information we collect using cookies and how that information is used.

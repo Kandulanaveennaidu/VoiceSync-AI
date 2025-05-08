@@ -1,7 +1,16 @@
+
+"use client";
 import Link from 'next/link';
 import { Mail, PhoneCall } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function Footer() {
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
+
   return (
     <footer className="bg-muted/50 text-muted-foreground py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,10 +25,10 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold text-foreground mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              <li><Link href="#features" className="hover:text-primary transition-colors text-sm">Features</Link></li>
-              <li><Link href="#pricing" className="hover:text-primary transition-colors text-sm">Pricing</Link></li>
-              <li><Link href="#faq" className="hover:text-primary transition-colors text-sm">FAQ</Link></li>
-              <li><Link href="#partner" className="hover:text-primary transition-colors text-sm">Partner Program</Link></li>
+              <li><Link href="/#features" className="hover:text-primary transition-colors text-sm">Features</Link></li>
+              <li><Link href="/#pricing" className="hover:text-primary transition-colors text-sm">Pricing</Link></li>
+              <li><Link href="/#faq" className="hover:text-primary transition-colors text-sm">FAQ</Link></li>
+              <li><Link href="/#partner" className="hover:text-primary transition-colors text-sm">Partner Program</Link></li>
             </ul>
           </div>
           <div>
@@ -32,7 +41,9 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-10 border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-sm mb-4 md:mb-0">&copy; {new Date().getFullYear()} Nedzo AI. All rights reserved.</p>
+          <p className="text-sm mb-4 md:mb-0">
+            &copy; {currentYear || 'Loading...'} Nedzo AI. All rights reserved.
+          </p>
           <a href="mailto:contact@nedzo.ai" className="flex items-center space-x-2 text-sm hover:text-primary transition-colors">
             <Mail className="h-4 w-4" />
             <span>contact@nedzo.ai</span>

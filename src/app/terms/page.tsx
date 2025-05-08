@@ -1,10 +1,19 @@
 
+"use client";
+import { useState, useEffect } from 'react';
+
 export default function TermsPage() {
+  const [lastUpdatedDate, setLastUpdatedDate] = useState('');
+
+  useEffect(() => {
+    setLastUpdatedDate(new Date().toLocaleDateString());
+  }, []);
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-32 min-h-screen">
       <h1 className="text-4xl font-bold text-foreground mb-8">Terms of Service</h1>
       <div className="prose prose-lg max-w-none text-muted-foreground">
-        <p>Last updated: {new Date().toLocaleDateString()}</p>
+        <p>Last updated: {lastUpdatedDate || 'Loading...'}</p>
 
         <h2 className="text-2xl font-semibold text-foreground mt-6 mb-3">1. Acceptance of Terms</h2>
         <p>
