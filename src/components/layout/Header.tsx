@@ -23,21 +23,26 @@ export default function Header() {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
+    // Set initial state
+    handleScroll(); 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const logoTextColor = isScrolled ? 'text-foreground' : 'text-white';
+  const navLinkTextColor = isScrolled ? 'text-muted-foreground hover:text-primary' : 'text-gray-200 hover:text-white';
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-background/90 shadow-md backdrop-blur-md' : 'bg-transparent'}`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <PhoneCall className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold text-foreground">Nedzo</span>
+            <PhoneCall className={`h-8 w-8 ${isScrolled ? 'text-primary' : 'text-white'}`} />
+            <span className={`text-2xl font-bold ${logoTextColor}`}>Nedzo</span>
           </Link>
           
           <nav className="hidden md:flex space-x-6 items-center">
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              <Link key={link.href} href={link.href} className={`text-sm font-medium ${navLinkTextColor} transition-colors`}>
                 {link.label}
               </Link>
             ))}
@@ -49,7 +54,7 @@ export default function Header() {
           <div className="md:hidden">
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className={isScrolled ? 'text-foreground' : 'text-white hover:text-gray-200 hover:bg-white/10'}>
                   <Menu className="h-6 w-6" />
                   <span className="sr-only">Open menu</span>
                 </Button>
@@ -82,3 +87,4 @@ export default function Header() {
     </header>
   );
 }
+
