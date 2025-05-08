@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ export default function HeroSection() {
               onClick={() => setIsVoiceModalOpen(true)}
               aria-label="Open Voice Tools"
             >
-              <Mic className="w-32 h-32 text-white" />
+              <Mic className="w-40 h-40 text-white" />
             </Button>
           </div>
           <Button size="lg" asChild className="animate-slide-up animation-delay-800">

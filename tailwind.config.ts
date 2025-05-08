@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 import defaultTheme from 'tailwindcss/defaultTheme';
 
@@ -105,7 +106,7 @@ export default {
   			'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fade-in 0.5s ease-out forwards',
         'slide-up': 'slide-up 0.5s ease-out forwards',
-        'bounce-gentle': 'bounce-gentle 3s infinite',
+        'bounce-gentle': 'bounce-gentle 5s infinite',
   		}
   	}
   },
