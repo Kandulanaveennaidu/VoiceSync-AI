@@ -89,13 +89,14 @@
   }
 }
 
-/* Custom wave SVG for Hero section - simplified */
+/* Custom wave SVG for Hero section - updated for AI/Voice theme */
 .wave-bg {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 1440 320' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%230038FF' fill-opacity='0.1' d='M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,170.7C672,149,768,139,864,154.7C960,171,1056,213,1152,229.3C1248,245,1344,235,1392,229.3L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3Cpath fill='%237F00FF' fill-opacity='0.1' d='M0,224L48,208C96,192,192,160,288,170.7C384,181,480,235,576,250.7C672,267,768,245,864,213.3C960,181,1056,139,1152,133.3C1248,128,1344,160,1392,176L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 1440 320' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cstyle type='text/css'%3E.wave%7Bstroke-width:1.5px;fill:none;stroke-linecap:round;stroke-linejoin:round;%7D%3C/style%3E%3C/defs%3E%3Cpath class='wave' style='stroke:%231E5EFF;stroke-opacity:0.3;' d='M0,100 Q360,50 720,100 T1440,100'/%3E%3Cpath class='wave' style='stroke:%23008080;stroke-opacity:0.25;' d='M0,160 Q360,210 720,160 T1440,160'/%3E%3Cpath class='wave' style='stroke:%237F00FF;stroke-opacity:0.2;' d='M0,220 Q360,170 720,220 T1440,220'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: bottom;
   background-size: cover;
 }
+
 
 /* Keyframes for map dot animation */
 @keyframes pulse-map-dot {
