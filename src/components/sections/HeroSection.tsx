@@ -54,10 +54,8 @@ export default function HeroSection() {
             variants={slideUp(0.4)}
           >
              <motion.div
-                // Apply the pulse animation class here
                 className="animate-pulse-glow"
-                // Framer Motion hover/tap effects are fine but the main pulse is CSS
-                whileHover={{ scale: 1.02 }} // Subtle hover, main pulse from CSS
+                whileHover={{ scale: 1.02 }} 
                 whileTap={{ scale: 0.98 }}
               >
                 <Button
@@ -67,8 +65,7 @@ export default function HeroSection() {
                   onClick={() => setIsVoiceModalOpen(true)}
                   aria-label="Open Voice Tools"
                 >
-                  {/* Increased icon size */}
-                  <Mic className="w-28 h-28 md:w-32 md:h-32 text-white" />
+                  <Mic className="w-36 h-36 md:w-40 md:h-40 text-white" />
                 </Button>
               </motion.div>
           </motion.div>
