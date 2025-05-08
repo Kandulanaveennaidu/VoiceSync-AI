@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 import defaultTheme from 'tailwindcss/defaultTheme';
 
@@ -102,23 +101,32 @@ export default {
             opacity: '1',
           },
         },
-        'pulse-glow': { // Refined pulse-glow
+        'pulse-glow': {
           '0%, 100%': {
             transform: 'scale(1)',
-            opacity: '0.75', // Slightly less transparent at base
+            opacity: '0.75',
           },
           '50%': {
-            transform: 'scale(1.04)', // More subtle scale
+            transform: 'scale(1.04)',
             opacity: '1',
           },
-        }
+        },
+        'filter-glow-voicesync': {
+          '0%, 100%': {
+            filter: "drop-shadow(0 0 1.5px theme('colors.slate.200 / 70%')) drop-shadow(0 0 3px theme('colors.blue.500 / 50%')) drop-shadow(0 0 4.5px theme('colors.blue.600 / 30%'))",
+          },
+          '50%': {
+            filter: "drop-shadow(0 0 3px theme('colors.slate.100 / 100%')) drop-shadow(0 0 6px theme('colors.blue.400 / 70%')) drop-shadow(0 0 9px theme('colors.blue.500 / 50%'))",
+          },
+        },
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
         'bounce-gentle': 'bounce-gentle 4s infinite',
         'pulse-map-dot': 'pulse-map-dot 2s infinite ease-in-out',
-        'pulse-glow': 'pulse-glow 3s infinite ease-in-out', // Slightly longer duration for smoothness
+        'pulse-glow': 'pulse-glow 3s infinite ease-in-out',
+        'filter-glow-voicesync': 'filter-glow-voicesync 2.5s infinite ease-in-out',
   		}
   	}
   },

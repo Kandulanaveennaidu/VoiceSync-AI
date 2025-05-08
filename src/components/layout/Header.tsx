@@ -1,11 +1,11 @@
-
 "use client";
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, PhoneCall } from 'lucide-react';
+import { Menu, Waves } from 'lucide-react'; // Changed PhoneCall to Waves
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 const navLinks = [
   { href: '#features', label: 'Features' },
@@ -23,21 +23,34 @@ export default function Header() {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
-    // Set initial state
     handleScroll(); 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const logoTextColor = isScrolled ? 'text-foreground' : 'text-white';
+  const iconColorClass = isScrolled ? 'text-blue-700' : 'text-slate-100'; // For Waves icon
   const navLinkTextColor = isScrolled ? 'text-muted-foreground hover:text-primary' : 'text-gray-200 hover:text-white';
+
+  const iconAnimation = {
+    scale: [1, 1.08, 1, 1.03, 1],
+    transition: {
+      duration: 2.5,
+      repeat: Infinity,
+      ease: "easeInOut",
+      repeatType: "mirror" as const // Ensure correct type for repeatType
+    }
+  };
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-background/90 shadow-md backdrop-blur-md' : 'bg-transparent'}`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <PhoneCall className={`h-8 w-8 ${isScrolled ? 'text-primary' : 'text-white'}`} />
-            <span className={`text-2xl font-bold ${logoTextColor}`}>Nedzo</span>
+            <motion.div animate={iconAnimation}>
+              <Waves className={`h-8 w-8 ${iconColorClass}`} />
+            </motion.div>
+            <span className="text-2xl font-bold logo-text-voicesync-gradient animate-filter-glow-voicesync">
+              VoiceSync AI
+            </span>
           </Link>
           
           <nav className="hidden md:flex space-x-6 items-center">
@@ -62,8 +75,12 @@ export default function Header() {
               <SheetContent side="right" className="w-full max-w-xs bg-background p-6">
                 <div className="flex flex-col space-y-6">
                   <Link href="/" className="flex items-center space-x-2 mb-6" onClick={() => setMobileMenuOpen(false)}>
-                    <PhoneCall className="h-8 w-8 text-primary" />
-                    <span className="text-2xl font-bold text-foreground">Nedzo</span>
+                    <motion.div animate={iconAnimation}>
+                      <Waves className="h-8 w-8 text-blue-700" /> {/* Consistent color for mobile menu icon */}
+                    </motion.div>
+                    <span className="text-2xl font-bold logo-text-voicesync-gradient animate-filter-glow-voicesync">
+                      VoiceSync AI
+                    </span>
                   </Link>
                   {navLinks.map((link) => (
                     <Link
@@ -87,4 +104,3 @@ export default function Header() {
     </header>
   );
 }
-

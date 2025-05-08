@@ -1,8 +1,8 @@
-
 "use client";
 import Link from 'next/link';
-import { Mail, PhoneCall } from 'lucide-react';
+import { Mail, Waves } from 'lucide-react'; // Changed PhoneCall to Waves
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 export default function Footer() {
   const [currentYear, setCurrentYear] = useState<number | null>(null);
@@ -11,14 +11,28 @@ export default function Footer() {
     setCurrentYear(new Date().getFullYear());
   }, []);
 
+  const iconAnimation = {
+    scale: [1, 1.08, 1, 1.03, 1],
+    transition: {
+      duration: 2.5,
+      repeat: Infinity,
+      ease: "easeInOut",
+      repeatType: "mirror" as const
+    }
+  };
+
   return (
     <footer className="bg-muted/50 text-muted-foreground py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <PhoneCall className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold text-foreground">Nedzo</span>
+              <motion.div animate={iconAnimation}>
+                <Waves className="h-8 w-8 text-blue-700" /> {/* Consistent color for footer icon */}
+              </motion.div>
+              <span className="text-2xl font-bold logo-text-voicesync-gradient animate-filter-glow-voicesync">
+                VoiceSync AI
+              </span>
             </Link>
             <p className="text-sm">AI Calls, Made Simple. Empowering agencies with intelligent voice solutions.</p>
           </div>
@@ -42,11 +56,11 @@ export default function Footer() {
         </div>
         <div className="mt-10 border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm mb-4 md:mb-0">
-            &copy; {currentYear || 'Loading...'} Nedzo AI. All rights reserved.
+            &copy; {currentYear || 'Loading...'} VoiceSync AI. All rights reserved. {/* Updated company name */}
           </p>
-          <a href="mailto:contact@nedzo.ai" className="flex items-center space-x-2 text-sm hover:text-primary transition-colors">
+          <a href="mailto:contact@voicesync.ai" className="flex items-center space-x-2 text-sm hover:text-primary transition-colors"> {/* Updated email */}
             <Mail className="h-4 w-4" />
-            <span>contact@nedzo.ai</span>
+            <span>contact@voicesync.ai</span>
           </a>
         </div>
       </div>
