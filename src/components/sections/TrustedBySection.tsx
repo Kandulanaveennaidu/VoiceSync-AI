@@ -12,7 +12,7 @@ const partners: Partner[] = [
   { name: 'Beta Solutions', logoSrc: 'https://picsum.photos/160/50?random=2', aiHint: 'tech company' },
   { name: 'Gamma Growth', logoSrc: 'https://picsum.photos/140/65?random=3', aiHint: 'marketing firm' },
   { name: 'Delta Digital', logoSrc: 'https://picsum.photos/155/55?random=4', aiHint: 'digital agency' },
-  { name: 'Epsilon Experts', logoSrc: 'https://picsum.photos/145/60?random=5', aiHint: 'consulting group' },
+  // { name: 'Epsilon Experts', logoSrc: 'https://picsum.photos/145/60?random=5', aiHint: 'consulting group' }, // Removed this partner
 ];
 
 export default function TrustedBySection() {
@@ -40,3 +40,4 @@ export default function TrustedBySection() {
     </section>
   );
 }
+
