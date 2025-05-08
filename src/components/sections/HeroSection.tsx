@@ -31,7 +31,7 @@ export default function HeroSection() {
               onClick={() => setIsVoiceModalOpen(true)}
               aria-label="Open Voice Tools"
             >
-              <Mic className="w-24 h-24 text-white" />
+              <Mic className="w-32 h-32 text-white" />
             </Button>
           </div>
           <Button size="lg" asChild className="animate-slide-up animation-delay-800">
@@ -51,3 +51,4 @@ export default function HeroSection() {
 //   .animation-delay-600 { animation-delay: 0.6s; }
 //   .animation-delay-800 { animation-delay: 0.8s; }
 // }
+

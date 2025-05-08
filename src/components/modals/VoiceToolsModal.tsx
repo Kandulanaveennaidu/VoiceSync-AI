@@ -8,11 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Mic as MicIcon, Play, AlertCircle, Volume2, UploadCloud, DownloadCloud, Copy, Settings2 } from "lucide-react";
+import { Loader2, Mic as MicIcon, AlertCircle, Volume2, UploadCloud, DownloadCloud, Copy, Settings2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import type { TextToSpeechInput } from "@/ai/flows/text-to-speech-flow";
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { speechToText } from "@/ai/flows/speech-to-text-flow";
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { useToast } from "@/hooks/use-toast"; 
 
 interface VoiceToolsModalProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ interface VoiceToolsModalProps {
 }
 
 export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProps) {
-  const { toast } = useToast(); // Initialize toast
+  const { toast } = useToast(); 
   const [activeTab, setActiveTab] = useState("tts");
 
   // TTS States
@@ -46,36 +47,47 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
 
   useEffect(() => {
     const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
-      if (availableVoices.length > 0 && !selectedVoiceURI) {
-        const defaultEngVoice = availableVoices.find(voice => voice.lang.startsWith('en') && voice.default) 
-          || availableVoices.find(voice => voice.lang.startsWith('en')) 
-          || availableVoices[0];
-        if (defaultEngVoice) {
-          setSelectedVoiceURI(defaultEngVoice.voiceURI);
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        const availableVoices = window.speechSynthesis.getVoices();
+        setVoices(availableVoices);
+        if (availableVoices.length > 0 && !selectedVoiceURI) {
+          const defaultEngVoice = availableVoices.find(voice => voice.lang.startsWith('en') && voice.default) 
+            || availableVoices.find(voice => voice.lang.startsWith('en')) 
+            || availableVoices[0];
+          if (defaultEngVoice) {
+            setSelectedVoiceURI(defaultEngVoice.voiceURI);
+          }
         }
       }
     };
 
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      loadVoices();
-      window.speechSynthesis.onvoiceschanged = loadVoices;
+        // onvoiceschanged might fire early, or voices might already be available
+        const initialVoices = window.speechSynthesis.getVoices();
+        if (initialVoices.length > 0) {
+            loadVoices();
+        } else {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
     }
+    
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = null;
       }
-      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+      if (audioPreviewUrl) {
+        URL.revokeObjectURL(audioPreviewUrl);
+      }
     };
-  }, [selectedVoiceURI]); // Only re-run if selectedVoiceURI changes, or for initial load. audioPreviewUrl cleanup added.
+  }, [selectedVoiceURI]); // Re-run if selectedVoiceURI changes, or for initial load.
 
   const handleSpeak = async () => {
     setTtsLoading(true);
     setTtsError(null);
     setGeneratedTextToSpeak(null);
     try {
-      const result = await textToSpeech({ text: ttsInput || undefined });
+      const inputForFlow: TextToSpeechInput = { text: ttsInput.trim() !== "" ? ttsInput : undefined };
+      const result = await textToSpeech(inputForFlow);
       setGeneratedTextToSpeak(result.textToSpeak);
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         const utterance = new SpeechSynthesisUtterance(result.textToSpeak);
@@ -88,14 +100,17 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
         utterance.onerror = (event) => {
           console.error("SpeechSynthesisUtterance.onerror", event);
           setTtsError("Could not play audio. Your browser might not support speech synthesis or has an issue.");
+          toast({ title: "Speech Error", description: "Could not play audio. Check browser support or permissions.", variant: "destructive" });
         };
         window.speechSynthesis.speak(utterance);
       } else {
         setTtsError("Speech synthesis is not supported in your browser.");
+        toast({ title: "Unsupported Feature", description: "Speech synthesis is not supported in your browser.", variant: "destructive" });
       }
     } catch (error) {
       console.error("Error in text-to-speech flow:", error);
       setTtsError("Failed to generate speech. Please try again.");
+      toast({ title: "TTS Error", description: "Failed to generate speech. Please try again.", variant: "destructive" });
     }
     setTtsLoading(false);
   };
@@ -110,7 +125,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream);
+        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         audioChunksRef.current = [];
 
         mediaRecorderRef.current.ondataavailable = (event) => {
@@ -118,7 +133,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
         };
 
         mediaRecorderRef.current.onstop = async () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' }); // Ensure MIME type matches recorder
           setRecordedAudioBlob(audioBlob);
           const audioDataUri = await blobToDataURI(audioBlob);
           setAudioPreviewUrl(URL.createObjectURL(audioBlob));
@@ -130,9 +145,10 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
           } catch (error) {
             console.error("Error in speech-to-text flow:", error);
             setSttError("Failed to transcribe audio. Please try again.");
+            toast({ title: "STT Error", description: "Failed to transcribe audio. Please try again.", variant: "destructive" });
           }
           setSttLoading(false);
-          stream.getTracks().forEach(track => track.stop());
+          stream.getTracks().forEach(track => track.stop()); // Stop media stream tracks
         };
 
         mediaRecorderRef.current.start();
@@ -140,9 +156,11 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       } catch (err) {
         console.error("Error accessing microphone:", err);
         setSttError("Could not access microphone. Please check permissions.");
+        toast({ title: "Microphone Error", description: "Could not access microphone. Please check permissions.", variant: "destructive" });
       }
     } else {
       setSttError("Audio recording is not supported in your browser.");
+      toast({ title: "Unsupported Feature", description: "Audio recording is not supported in your browser.", variant: "destructive" });
     }
   };
 
@@ -150,7 +168,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
     }
-    setIsRecording(false);
+    setIsRecording(false); // This should be set here, not only in onstop
   };
 
   const blobToDataURI = (blob: Blob): Promise<string> => {
@@ -174,6 +192,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     element.click();
     document.body.removeChild(element);
     URL.revokeObjectURL(element.href);
+    toast({ title: "Downloaded", description: `${filename} downloaded.`});
   };
 
   const downloadAudioBlob = (filename: string, blob: Blob | null) => {
@@ -187,6 +206,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
+    toast({ title: "Downloaded", description: `${filename} downloaded.`});
   };
 
   const copyToClipboard = async (text: string | null) => {
@@ -200,24 +220,28 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     }
   };
 
-  // Reset states when modal is closed or opened
   useEffect(() => {
     if (!isOpen) {
+      // Reset TTS states
       setTtsInput("");
       setTtsLoading(false);
       setTtsError(null);
       setGeneratedTextToSpeak(null);
       setSpeechRate(1);
       setSpeechPitch(1);
-      // Don't reset selectedVoiceURI to keep user preference if modal reopens quickly.
+      // voices and selectedVoiceURI are generally fine to persist if modal reopens
       
+      // Reset STT states
       setSttLoading(false);
       setSttError(null);
       setTranscript(null);
-      setIsRecording(false);
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-        mediaRecorderRef.current.stop();
+      if (isRecording) { // Ensure recording stops if modal is closed while recording
+         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.stream?.getTracks().forEach(track => track.stop());
+        }
       }
+      setIsRecording(false);
       audioChunksRef.current = [];
       if (audioPreviewUrl) {
         URL.revokeObjectURL(audioPreviewUrl);
@@ -225,7 +249,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       }
       setRecordedAudioBlob(null);
     }
-  }, [isOpen]); // Removed audioPreviewUrl from dependency array, cleanup is now in main effect
+  }, [isOpen, audioPreviewUrl, isRecording]);
 
 
   return (
@@ -234,7 +258,8 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
         <DialogHeader>
           <DialogTitle className="text-2xl">AI Voice Tools</DialogTitle>
           <DialogDescription>
-            Experiment with Text-to-Speech and Speech-to-Text functionalities powered by Nedzo AI.
+            Experiment with Text-to-Speech and Speech-to-Text functionalities powered by Nedzo AI. 
+            Voice options are provided by your browser.
           </DialogDescription>
         </DialogHeader>
 
@@ -272,14 +297,15 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
                   <Label htmlFor="voice-select">Voice</Label>
                   <Select value={selectedVoiceURI} onValueChange={setSelectedVoiceURI} disabled={voices.length === 0}>
                     <SelectTrigger id="voice-select">
-                      <SelectValue placeholder="Select voice..." />
+                      <SelectValue placeholder={voices.length > 0 ? "Select voice..." : "Loading voices..."} />
                     </SelectTrigger>
                     <SelectContent>
                       {voices.map(voice => (
                         <SelectItem key={voice.voiceURI} value={voice.voiceURI}>
-                          {voice.name} ({voice.lang})
+                          {voice.name} ({voice.lang}) {voice.default ? "[Default]" : ""}
                         </SelectItem>
                       ))}
+                       {voices.length === 0 && <SelectItem value="no-voice" disabled>No voices available or still loading.</SelectItem>}
                     </SelectContent>
                   </Select>
                 </div>
@@ -297,6 +323,8 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
                 {ttsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Volume2 className="mr-2 h-4 w-4" />}
                 Generate & Speak
               </Button>
+              <p className="text-xs text-muted-foreground">Note: Actual speech audio download is not available via browser API. You can download the text.</p>
+
 
               {generatedTextToSpeak && !ttsLoading && (
                 <div className="mt-4 p-3 bg-muted rounded-md space-y-2">
@@ -329,7 +357,8 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
                   {isRecording ? "Recording..." : "Start Recording"}
                 </Button>
                 <Button onClick={stopRecording} disabled={!isRecording || sttLoading} variant="outline" className="flex-1">
-                  <MicIcon className="mr-2 h-4 w-4" />
+                  {/* Use a different icon or just text for Stop */}
+                  <MicIcon className="mr-2 h-4 w-4 opacity-50" /> 
                   Stop Recording
                 </Button>
               </div>
@@ -393,3 +422,4 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     </Dialog>
   );
 }
+
