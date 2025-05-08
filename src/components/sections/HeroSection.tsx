@@ -27,11 +27,11 @@ export default function HeroSection() {
             <Button
               variant="ghost"
               size="icon"
-              className="p-4 bg-gradient-to-br from-[#0038FF] to-[#7F00FF] rounded-full shadow-2xl w-auto h-auto hover:bg-gradient-to-br hover:from-[#0038FF]/90 hover:to-[#7F00FF]/90 transition-all duration-300 ease-in-out transform hover:scale-105"
+              className="p-4 bg-gradient-to-br from-[#0038FF] to-[#7F00FF] rounded-full shadow-2xl w-auto h-auto hover:bg-gradient-to-br hover:from-[#0038FF]/90 hover:to-[#7F00FF]/90 transition-all duration-300 ease-in-out transform hover:scale-105 animate-bounce-gentle"
               onClick={() => setIsVoiceModalOpen(true)}
               aria-label="Open Voice Tools"
             >
-              <Mic className="w-16 h-16 text-white" />
+              <Mic className="w-24 h-24 text-white" />
             </Button>
           </div>
           <Button size="lg" asChild className="animate-slide-up animation-delay-800">

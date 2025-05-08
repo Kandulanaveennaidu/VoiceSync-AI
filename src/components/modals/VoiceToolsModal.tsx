@@ -6,10 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, Mic as MicIcon, Play, AlertCircle, Volume2, UploadCloud } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Mic as MicIcon, Play, AlertCircle, Volume2, UploadCloud, DownloadCloud, Copy, Settings2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { speechToText } from "@/ai/flows/speech-to-text-flow";
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 interface VoiceToolsModalProps {
   isOpen: boolean;
@@ -17,11 +20,20 @@ interface VoiceToolsModalProps {
 }
 
 export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProps) {
+  const { toast } = useToast(); // Initialize toast
+  const [activeTab, setActiveTab] = useState("tts");
+
+  // TTS States
   const [ttsInput, setTtsInput] = useState("");
   const [ttsLoading, setTtsLoading] = useState(false);
   const [ttsError, setTtsError] = useState<string | null>(null);
   const [generatedTextToSpeak, setGeneratedTextToSpeak] = useState<string | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string | undefined>();
+  const [speechRate, setSpeechRate] = useState(1);
+  const [speechPitch, setSpeechPitch] = useState(1);
 
+  // STT States
   const [sttLoading, setSttLoading] = useState(false);
   const [sttError, setSttError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<string | null>(null);
@@ -29,20 +41,35 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
 
 
   useEffect(() => {
-    // Clean up recording state if modal is closed while recording
-    return () => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-        mediaRecorderRef.current.stop();
-      }
-      if (audioPreviewUrl) {
-        URL.revokeObjectURL(audioPreviewUrl);
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      setVoices(availableVoices);
+      if (availableVoices.length > 0 && !selectedVoiceURI) {
+        const defaultEngVoice = availableVoices.find(voice => voice.lang.startsWith('en') && voice.default) 
+          || availableVoices.find(voice => voice.lang.startsWith('en')) 
+          || availableVoices[0];
+        if (defaultEngVoice) {
+          setSelectedVoiceURI(defaultEngVoice.voiceURI);
+        }
       }
     };
-  }, [audioPreviewUrl]);
-  
+
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    };
+  }, [selectedVoiceURI]); // Only re-run if selectedVoiceURI changes, or for initial load. audioPreviewUrl cleanup added.
+
   const handleSpeak = async () => {
     setTtsLoading(true);
     setTtsError(null);
@@ -52,10 +79,12 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       setGeneratedTextToSpeak(result.textToSpeak);
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         const utterance = new SpeechSynthesisUtterance(result.textToSpeak);
-        // You might want to add voice selection or other options here
-        // For example:
-        // const voices = window.speechSynthesis.getVoices();
-        // utterance.voice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+        if (selectedVoiceURI) {
+          const voice = voices.find(v => v.voiceURI === selectedVoiceURI);
+          if (voice) utterance.voice = voice;
+        }
+        utterance.rate = speechRate;
+        utterance.pitch = speechPitch;
         utterance.onerror = (event) => {
           console.error("SpeechSynthesisUtterance.onerror", event);
           setTtsError("Could not play audio. Your browser might not support speech synthesis or has an issue.");
@@ -74,9 +103,9 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
   const startRecording = async () => {
     setSttError(null);
     setTranscript(null);
-    setAudioPreviewUrl(null);
     if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
-
+    setAudioPreviewUrl(null);
+    setRecordedAudioBlob(null);
 
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
@@ -89,12 +118,11 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
         };
 
         mediaRecorderRef.current.onstop = async () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' }); // Common format
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          setRecordedAudioBlob(audioBlob);
           const audioDataUri = await blobToDataURI(audioBlob);
+          setAudioPreviewUrl(URL.createObjectURL(audioBlob));
           
-          const previewUrl = URL.createObjectURL(audioBlob);
-          setAudioPreviewUrl(previewUrl);
-
           setSttLoading(true);
           try {
             const result = await speechToText({ audioDataUri });
@@ -104,7 +132,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
             setSttError("Failed to transcribe audio. Please try again.");
           }
           setSttLoading(false);
-          stream.getTracks().forEach(track => track.stop()); // Stop microphone access
+          stream.getTracks().forEach(track => track.stop());
         };
 
         mediaRecorderRef.current.start();
@@ -129,17 +157,49 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          resolve(reader.result);
-        } else {
-          reject(new Error("Failed to convert blob to Data URI"));
-        }
+        if (typeof reader.result === 'string') resolve(reader.result);
+        else reject(new Error("Failed to convert blob to Data URI"));
       };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
   };
   
+  const downloadFile = (filename: string, content: string, type: string) => {
+    const element = document.createElement("a");
+    const file = new Blob([content], { type });
+    element.href = URL.createObjectURL(file);
+    element.download = filename;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    URL.revokeObjectURL(element.href);
+  };
+
+  const downloadAudioBlob = (filename: string, blob: Blob | null) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const copyToClipboard = async (text: string | null) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: "Copied to clipboard!" });
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      toast({ title: "Failed to copy", description: "Could not copy text to clipboard.", variant: "destructive" });
+    }
+  };
+
   // Reset states when modal is closed or opened
   useEffect(() => {
     if (!isOpen) {
@@ -147,6 +207,9 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       setTtsLoading(false);
       setTtsError(null);
       setGeneratedTextToSpeak(null);
+      setSpeechRate(1);
+      setSpeechPitch(1);
+      // Don't reset selectedVoiceURI to keep user preference if modal reopens quickly.
       
       setSttLoading(false);
       setSttError(null);
@@ -160,8 +223,9 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
         URL.revokeObjectURL(audioPreviewUrl);
         setAudioPreviewUrl(null);
       }
+      setRecordedAudioBlob(null);
     }
-  }, [isOpen, audioPreviewUrl]);
+  }, [isOpen]); // Removed audioPreviewUrl from dependency array, cleanup is now in main effect
 
 
   return (
@@ -174,13 +238,13 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="tts" className="flex-grow overflow-hidden flex flex-col">
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="flex-grow overflow-hidden flex flex-col">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="tts">Text-to-Speech</TabsTrigger>
             <TabsTrigger value="stt">Speech-to-Text</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="tts" className="flex-grow overflow-y-auto p-1 mt-0">
+          <TabsContent value="tts" className="flex-grow overflow-y-auto p-1 mt-0 space-y-4">
             <div className="space-y-4 p-4">
               <div>
                 <Label htmlFor="tts-input">Text to Speak (Optional)</Label>
@@ -189,18 +253,63 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
                   value={ttsInput}
                   onChange={(e) => setTtsInput(e.target.value)}
                   placeholder="Enter text here, or leave blank for an AI-generated phrase..."
-                  rows={5}
+                  rows={3}
                   className="mt-1"
                 />
+                 <div className="flex gap-2 mt-2">
+                    <Button variant="outline" size="sm" onClick={() => downloadFile("tts_input.txt", ttsInput, "text/plain")} disabled={!ttsInput}>
+                        <DownloadCloud className="mr-2 h-4 w-4" /> Input
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(ttsInput)} disabled={!ttsInput}>
+                        <Copy className="mr-2 h-4 w-4" /> Input
+                    </Button>
+                 </div>
               </div>
+
+              <div className="space-y-3 p-3 border rounded-md">
+                <Label className="flex items-center gap-2 font-semibold"><Settings2 className="h-5 w-5 text-primary"/>Speech Controls</Label>
+                <div>
+                  <Label htmlFor="voice-select">Voice</Label>
+                  <Select value={selectedVoiceURI} onValueChange={setSelectedVoiceURI} disabled={voices.length === 0}>
+                    <SelectTrigger id="voice-select">
+                      <SelectValue placeholder="Select voice..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {voices.map(voice => (
+                        <SelectItem key={voice.voiceURI} value={voice.voiceURI}>
+                          {voice.name} ({voice.lang})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="speech-rate">Rate: {speechRate.toFixed(1)}</Label>
+                  <Slider id="speech-rate" min={0.1} max={2} step={0.1} value={[speechRate]} onValueChange={(v) => setSpeechRate(v[0])} />
+                </div>
+                <div>
+                  <Label htmlFor="speech-pitch">Pitch: {speechPitch.toFixed(1)}</Label>
+                  <Slider id="speech-pitch" min={0} max={2} step={0.1} value={[speechPitch]} onValueChange={(v) => setSpeechPitch(v[0])} />
+                </div>
+              </div>
+
               <Button onClick={handleSpeak} disabled={ttsLoading} className="w-full sm:w-auto">
                 {ttsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Volume2 className="mr-2 h-4 w-4" />}
                 Generate & Speak
               </Button>
+
               {generatedTextToSpeak && !ttsLoading && (
-                <div className="mt-4 p-3 bg-muted rounded-md">
+                <div className="mt-4 p-3 bg-muted rounded-md space-y-2">
                   <p className="font-semibold">AI is saying:</p>
                   <p className="italic">"{generatedTextToSpeak}"</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => downloadFile("generated_speech.txt", generatedTextToSpeak, "text/plain")}>
+                        <DownloadCloud className="mr-2 h-4 w-4" /> Text
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(generatedTextToSpeak)}>
+                        <Copy className="mr-2 h-4 w-4" /> Text
+                    </Button>
+                  </div>
                 </div>
               )}
               {ttsError && (
@@ -240,18 +349,29 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
               )}
               
               {audioPreviewUrl && !isRecording && !sttLoading && (
-                <div className="mt-4">
+                <div className="mt-4 space-y-2">
                   <Label>Recorded Audio:</Label>
                   <audio controls src={audioPreviewUrl} className="w-full mt-1">
                     Your browser does not support the audio element.
                   </audio>
+                  <Button variant="outline" size="sm" onClick={() => downloadAudioBlob("recorded_audio.webm", recordedAudioBlob)} disabled={!recordedAudioBlob}>
+                     <DownloadCloud className="mr-2 h-4 w-4" /> Download Audio
+                  </Button>
                 </div>
               )}
 
               {transcript && !sttLoading && (
-                <div className="mt-4 p-3 bg-muted rounded-md">
+                <div className="mt-4 p-3 bg-muted rounded-md space-y-2">
                   <Label className="font-semibold block mb-1">Transcript:</Label>
                   <p className="whitespace-pre-wrap">{transcript}</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => downloadFile("transcript.txt", transcript, "text/plain")}>
+                        <DownloadCloud className="mr-2 h-4 w-4" /> Transcript
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(transcript)}>
+                        <Copy className="mr-2 h-4 w-4" /> Transcript
+                    </Button>
+                  </div>
                 </div>
               )}
               {sttError && (
