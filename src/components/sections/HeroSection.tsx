@@ -7,6 +7,7 @@ import { Mic, Star } from 'lucide-react';
 import Link from 'next/link';
 import VoiceToolsModal from '@/components/modals/VoiceToolsModal';
 import { motion } from 'framer-motion';
+import SoundwaveCanvas from '@/components/effects/SoundwaveCanvas';
 
 const fadeIn = {
   initial: { opacity: 0 },
@@ -25,15 +26,18 @@ export default function HeroSection() {
   return (
     <>
       <motion.section
-        className="relative pt-32 pb-20 md:pt-48 md:pb-32 wave-bg text-foreground"
+        className="relative pt-32 pb-20 md:pt-48 md:pb-32 text-foreground bg-black overflow-hidden" // Changed background to black and removed wave-bg
         initial="initial"
         animate="animate"
         variants={fadeIn}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-purple-500/20 dark:from-primary/30 dark:to-purple-600/30 opacity-70"></div>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+        <SoundwaveCanvas /> 
+        {/* The gradient overlay is removed as requested for black background with soundwaves */}
+        {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-purple-500/20 dark:from-primary/30 dark:to-purple-600/30 opacity-70"></div> */}
+        
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10"> {/* Ensure content is above canvas */}
           <motion.div variants={slideUp(0.1)}>
-            <Badge variant="outline" className="mb-6 py-2 px-4 border-primary/50 text-primary bg-primary/10 shadow-md">
+            <Badge variant="outline" className="mb-6 py-2 px-4 border-primary/50 text-primary bg-primary/10 shadow-md backdrop-blur-sm bg-opacity-50">
               <Star className="w-4 h-4 mr-2 fill-yellow-400 text-yellow-400" /> 5-Star Rated AI Solution
             </Badge>
           </motion.div>
@@ -44,7 +48,7 @@ export default function HeroSection() {
             AI Calls, Made Simple
           </motion.h1>
           <motion.p
-            className="text-xl md:text-2xl text-foreground/90 dark:text-foreground/80 mb-10 max-w-3xl mx-auto"
+            className="text-xl md:text-2xl text-white/90 dark:text-gray-200/90 mb-10 max-w-3xl mx-auto" // Ensure text is visible on black
             variants={slideUp(0.3)}
           >
             The Future of Communication. Empower your agency with intelligent voice agents that qualify leads, book meetings, and scale your business 24/7.
@@ -54,18 +58,17 @@ export default function HeroSection() {
             variants={slideUp(0.4)}
           >
              <motion.div
-                className="animate-pulse-glow" // This applies the pulse-glow animation
+                className="animate-pulse-glow" 
                 whileHover={{ scale: 1.02 }} 
                 whileTap={{ scale: 0.98 }}
               >
                 <Button
                   variant="ghost"
-                  size="icon" // This size prop might be overridden by w-auto h-auto and padding
+                  size="icon" 
                   className="p-4 bg-gradient-to-br from-primary to-purple-600 dark:from-blue-500 dark:to-purple-700 rounded-full shadow-2xl w-auto h-auto hover:bg-gradient-to-br hover:from-primary/90 hover:to-purple-600/90 dark:hover:from-blue-500/90 dark:hover:to-purple-700/90 transition-all duration-300 ease-in-out"
                   onClick={() => setIsVoiceModalOpen(true)}
                   aria-label="Open Voice Tools"
                 >
-                  {/* Increased icon size */}
                   <Mic className="w-48 h-48 md:w-56 md:h-56 text-white" />
                 </Button>
               </motion.div>
