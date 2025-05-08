@@ -26,16 +26,14 @@ export default function HeroSection() {
   return (
     <>
       <motion.section
-        className="relative pt-32 pb-20 md:pt-48 md:pb-32 text-foreground bg-black overflow-hidden" // Changed background to black and removed wave-bg
+        className="relative pt-32 pb-20 md:pt-48 md:pb-32 text-foreground bg-black overflow-hidden" 
         initial="initial"
         animate="animate"
         variants={fadeIn}
       >
         <SoundwaveCanvas /> 
-        {/* The gradient overlay is removed as requested for black background with soundwaves */}
-        {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-purple-500/20 dark:from-primary/30 dark:to-purple-600/30 opacity-70"></div> */}
         
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10"> {/* Ensure content is above canvas */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10"> 
           <motion.div variants={slideUp(0.1)}>
             <Badge variant="outline" className="mb-6 py-2 px-4 border-primary/50 text-primary bg-primary/10 shadow-md backdrop-blur-sm bg-opacity-50">
               <Star className="w-4 h-4 mr-2 fill-yellow-400 text-yellow-400" /> 5-Star Rated AI Solution
@@ -48,7 +46,7 @@ export default function HeroSection() {
             AI Calls, Made Simple
           </motion.h1>
           <motion.p
-            className="text-xl md:text-2xl text-white/90 dark:text-gray-200/90 mb-10 max-w-3xl mx-auto" // Ensure text is visible on black
+            className="text-xl md:text-2xl text-white/90 dark:text-gray-200/90 mb-10 max-w-3xl mx-auto" 
             variants={slideUp(0.3)}
           >
             The Future of Communication. Empower your agency with intelligent voice agents that qualify leads, book meetings, and scale your business 24/7.
@@ -69,7 +67,7 @@ export default function HeroSection() {
                   onClick={() => setIsVoiceModalOpen(true)}
                   aria-label="Open Voice Tools"
                 >
-                  <Mic className="w-48 h-48 md:w-56 md:h-56 text-white" />
+                  <Mic className="w-64 h-64 md:w-72 md:h-72 text-white" />
                 </Button>
               </motion.div>
           </motion.div>
@@ -84,3 +82,4 @@ export default function HeroSection() {
     </>
   );
 }
+
