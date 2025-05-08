@@ -25,7 +25,7 @@ export default function HeroSection() {
   return (
     <>
       <motion.section 
-        className="relative pt-32 pb-20 md:pt-48 md:pb-32 wave-bg text-foreground" // Changed text color to foreground
+        className="relative pt-32 pb-20 md:pt-48 md:pb-32 wave-bg text-foreground"
         initial="initial"
         animate="animate"
         variants={fadeIn}
@@ -44,7 +44,7 @@ export default function HeroSection() {
             AI Calls, Made Simple
           </motion.h1>
           <motion.p 
-            className="text-xl md:text-2xl mb-10 max-w-3xl mx-auto" // Removed text-foreground, inherits from section
+            className="text-xl md:text-2xl text-foreground mb-10 max-w-3xl mx-auto" 
             variants={slideUp(0.3)}
           >
             The Future of Communication. Empower your agency with intelligent voice agents that qualify leads, book meetings, and scale your business 24/7.
@@ -56,7 +56,7 @@ export default function HeroSection() {
              <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="animate-bounce-gentle"
+                className="animate-pulse-glow"
               >
                 <Button
                   variant="ghost"
