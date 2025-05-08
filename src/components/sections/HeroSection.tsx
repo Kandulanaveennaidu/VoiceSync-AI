@@ -24,39 +24,41 @@ export default function HeroSection() {
 
   return (
     <>
-      <motion.section 
+      <motion.section
         className="relative pt-32 pb-20 md:pt-48 md:pb-32 wave-bg text-foreground"
         initial="initial"
         animate="animate"
         variants={fadeIn}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-purple-500/15 dark:from-primary/20 dark:to-purple-600/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-purple-500/20 dark:from-primary/30 dark:to-purple-600/30 opacity-70"></div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <motion.div variants={slideUp(0.1)}>
-            <Badge variant="outline" className="mb-6 py-2 px-4 border-primary/50 text-primary bg-primary/10">
+            <Badge variant="outline" className="mb-6 py-2 px-4 border-primary/50 text-primary bg-primary/10 shadow-md">
               <Star className="w-4 h-4 mr-2 fill-yellow-400 text-yellow-400" /> 5-Star Rated AI Solution
             </Badge>
           </motion.div>
-          <motion.h1 
-            className="text-5xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400"
+          <motion.h1
+            className="text-5xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 leading-tight"
             variants={slideUp(0.2)}
           >
             AI Calls, Made Simple
           </motion.h1>
-          <motion.p 
-            className="text-xl md:text-2xl text-foreground mb-10 max-w-3xl mx-auto" 
+          <motion.p
+            className="text-xl md:text-2xl text-foreground/90 dark:text-foreground/80 mb-10 max-w-3xl mx-auto"
             variants={slideUp(0.3)}
           >
             The Future of Communication. Empower your agency with intelligent voice agents that qualify leads, book meetings, and scale your business 24/7.
           </motion.p>
-          <motion.div 
+          <motion.div
             className="flex justify-center items-center space-x-4 mb-12"
             variants={slideUp(0.4)}
           >
              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                // Apply the pulse animation class here
                 className="animate-pulse-glow"
+                // Framer Motion hover/tap effects are fine but the main pulse is CSS
+                whileHover={{ scale: 1.02 }} // Subtle hover, main pulse from CSS
+                whileTap={{ scale: 0.98 }}
               >
                 <Button
                   variant="ghost"
@@ -65,12 +67,13 @@ export default function HeroSection() {
                   onClick={() => setIsVoiceModalOpen(true)}
                   aria-label="Open Voice Tools"
                 >
-                  <Mic className="w-20 h-20 md:w-24 md:h-24 text-white" />
+                  {/* Increased icon size */}
+                  <Mic className="w-28 h-28 md:w-32 md:h-32 text-white" />
                 </Button>
               </motion.div>
           </motion.div>
           <motion.div variants={slideUp(0.5)}>
-            <Button size="lg" asChild>
+            <Button size="lg" asChild className="text-lg px-10 py-6">
               <Link href="#pricing">Try Free</Link>
             </Button>
           </motion.div>
