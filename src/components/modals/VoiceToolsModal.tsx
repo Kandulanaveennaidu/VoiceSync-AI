@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -62,6 +61,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
   const conversationScrollAreaRef = useRef<HTMLDivElement>(null);
   const assistantAudioChunksRef = useRef<Blob[]>([]);
   const assistantMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [assistantHasGreeted, setAssistantHasGreeted] = useState(false);
 
 
   useEffect(() => {
@@ -70,7 +70,6 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
         const availableVoices = window.speechSynthesis.getVoices();
         setVoices(availableVoices);
         if (availableVoices.length > 0 && !selectedVoiceURI) {
-          // Prioritize English voices, then default, then first available
           const preferredVoice = 
             availableVoices.find(voice => voice.lang.toLowerCase().startsWith('en-us') && voice.default) ||
             availableVoices.find(voice => voice.lang.toLowerCase().startsWith('en-gb') && voice.default) ||
@@ -100,12 +99,11 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     return () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = null;
-        window.speechSynthesis.cancel(); // Stop any ongoing speech
+        window.speechSynthesis.cancel(); 
       }
       if (audioPreviewUrl) {
         URL.revokeObjectURL(audioPreviewUrl);
       }
-      // Stop any active recordings if modal is closed
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
         mediaRecorderRef.current.stop();
       }
@@ -120,6 +118,52 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       conversationScrollAreaRef.current.scrollTop = conversationScrollAreaRef.current.scrollHeight;
     }
   }, [conversation]);
+
+  // Effect for AI Assistant initial greeting
+  useEffect(() => {
+    if (activeTab === "assistant" && !assistantHasGreeted && !isAssistantListening && !assistantProcessing && !isAgentReplying && isOpen) {
+      const sendInitialGreeting = async () => {
+        setAssistantProcessing(true);
+        setAssistantError(null);
+        try {
+          const agentResponse = await getAgentResponse({ userMessage: "Hello" }); 
+          if (agentResponse.reply) {
+            setConversation(prev => [...prev, { id: `agent-greeting-${Date.now()}`, speaker: 'agent', text: agentResponse.reply }]);
+            setIsAgentReplying(true);
+            speakText(agentResponse.reply, 
+              () => {
+                setIsAgentReplying(false);
+                setAssistantHasGreeted(true); 
+              }, 
+              (err) => {
+                setAssistantError(`Agent TTS Error: ${err}`);
+                setIsAgentReplying(false);
+                setAssistantHasGreeted(true); 
+              }
+            );
+          } else {
+             setAssistantError("AI Assistant did not provide an initial greeting.");
+             setAssistantHasGreeted(true); 
+          }
+        } catch (error) {
+          console.error("Error sending initial greeting to assistant:", error);
+          const errMsg = error instanceof Error ? error.message : "Failed to get initial greeting.";
+          setAssistantError(`Assistant Error: ${errMsg}`);
+          toast({ title: "Assistant Error", description: errMsg, variant: "destructive" });
+          setAssistantHasGreeted(true); 
+        }
+        setAssistantProcessing(false);
+      };
+      sendInitialGreeting();
+    }
+    
+    if (activeTab !== "assistant" && isAgentReplying) {
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        setIsAgentReplying(false);
+    }
+  }, [activeTab, assistantHasGreeted, isAssistantListening, assistantProcessing, isAgentReplying, isOpen, toast]);
 
 
   const handleSpeakTTS = async () => {
@@ -168,7 +212,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       const errorMsg = "Speech synthesis is not supported in your browser.";
       if (onErrorCallback) onErrorCallback(errorMsg);
       else toast({ title: "Unsupported Feature", description: errorMsg, variant: "destructive" });
-      if (onEndCallback) onEndCallback(); // still call onEnd to unlock UI
+      if (onEndCallback) onEndCallback(); 
     }
   };
 
@@ -208,21 +252,23 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     setIsAgentReplying(false);
 
     await startRecordingLogic(assistantMediaRecorderRef, assistantAudioChunksRef, setIsAssistantListening, null, null, async (audioDataUri) => {
-      setAssistantProcessing(true); // For STT part of assistant
+      setAssistantProcessing(true); 
       try {
         const sttResult = await speechToText({ audioDataUri });
         if (sttResult.transcript && sttResult.transcript.trim() !== "") {
-          setConversation(prev => [...prev, { id: Date.now().toString(), speaker: 'user', text: sttResult.transcript }]);
+          setConversation(prev => [...prev, { id: `user-${Date.now()}`, speaker: 'user', text: sttResult.transcript }]);
           
-          // Now get agent response
           const agentResponse = await getAgentResponse({ userMessage: sttResult.transcript });
-          setConversation(prev => [...prev, { id: (Date.now()+1).toString(), speaker: 'agent', text: agentResponse.reply }]);
-          
-          setIsAgentReplying(true);
-          speakText(agentResponse.reply, () => setIsAgentReplying(false), (err) => {
-            setAssistantError(`Agent TTS Error: ${err}`);
-            setIsAgentReplying(false);
-          });
+          if (agentResponse.reply) {
+            setConversation(prev => [...prev, { id: `agent-${Date.now()}`, speaker: 'agent', text: agentResponse.reply }]);
+            setIsAgentReplying(true);
+            speakText(agentResponse.reply, () => setIsAgentReplying(false), (err) => {
+              setAssistantError(`Agent TTS Error: ${err}`);
+              setIsAgentReplying(false);
+            });
+          } else {
+            setAssistantError("AI Assistant did not provide a reply.");
+          }
 
         } else {
            setAssistantError("No speech detected or transcription was empty.");
@@ -236,6 +282,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       setAssistantProcessing(false);
     }, (err) => {
       setAssistantError(err);
+      setIsAssistantListening(false); // Ensure listening state is false on error
       toast({ title: "Microphone Error", description: err, variant: "destructive" });
     });
   };
@@ -257,8 +304,6 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Ensure correct MIME type. Opus is good for quality and size, webm is widely supported.
-        // Let browser pick if 'audio/webm; codecs=opus' not supported.
         const options = MediaRecorder.isTypeSupported('audio/webm; codecs=opus') ? 
                         { mimeType: 'audio/webm; codecs=opus' } : 
                         MediaRecorder.isTypeSupported('audio/webm') ? 
@@ -280,9 +325,11 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
           if (audioBlob.size > 0) {
             await onStopCallback(audioDataUri);
           } else {
-            onErrorCallback("No audio data recorded. Please try again.");
+            // Do not call error if recording was intentionally short/empty or stopped before data.
+            // onErrorCallback("No audio data recorded. Please try again.");
           }
           stream.getTracks().forEach(track => track.stop());
+          setIsRecState(false); // Explicitly set recording state to false
         };
 
         recorderRef.current.start();
@@ -291,12 +338,12 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
         console.error("Error accessing microphone:", err);
         const errMsg = "Could not access microphone. Please check permissions.";
         onErrorCallback(errMsg);
-        setIsRecState(false); // Ensure state is reset
+        setIsRecState(false); 
       }
     } else {
       const errMsg = "Audio recording is not supported in your browser.";
       onErrorCallback(errMsg);
-      setIsRecState(false); // Ensure state is reset
+      setIsRecState(false); 
     }
   };
 
@@ -305,8 +352,11 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     setIsRecState: React.Dispatch<React.SetStateAction<boolean>>
   ) => {
     if (recorderRef.current && recorderRef.current.state === "recording") {
-      recorderRef.current.stop();
+      recorderRef.current.stop(); // This will trigger onstop
     }
+    // onstop handler will set IsRecState to false.
+    // Setting it here might be premature if onstop has async operations before it completes.
+    // However, for UI responsiveness, it can be set here, and onstop should ensure it's false too.
     setIsRecState(false);
   };
 
@@ -367,13 +417,12 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       setTtsLoading(false);
       setTtsError(null);
       setGeneratedTextToSpeak(null);
-      // speechRate, speechPitch, voices, selectedVoiceURI can persist
       
       // Reset STT states
       setSttLoading(false);
       setSttError(null);
       setTranscript(null);
-      if (isRecording) stopSTTRecording();
+      if (isRecording) stopRecordingLogic(mediaRecorderRef, setIsRecording); // Use stopRecordingLogic
       audioChunksRef.current = [];
       if (audioPreviewUrl) {
         URL.revokeObjectURL(audioPreviewUrl);
@@ -383,18 +432,19 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
 
       // Reset Assistant states
       setConversation([]);
-      if(isAssistantListening) stopVoiceAssistantListening();
+      if(isAssistantListening) stopRecordingLogic(assistantMediaRecorderRef, setIsAssistantListening); // Use stopRecordingLogic
       setIsAgentReplying(false);
       setAssistantProcessing(false);
       setAssistantError(null);
       assistantAudioChunksRef.current = [];
+      setAssistantHasGreeted(false); // Reset greeting state
 
-      // Cancel any ongoing speech synthesis
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
     }
-  }, [isOpen, isRecording, isAssistantListening, audioPreviewUrl]); // Dependencies ensure cleanup
+  // eslint-disable-next-line react-hooks/exhaustive-deps 
+  }, [isOpen]); // Primary dependency for cleanup is modal closing
 
 
   return (
@@ -559,7 +609,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
           <TabsContent value="assistant" className="flex-grow overflow-y-auto p-1 mt-0 flex flex-col">
             <div className="p-4 flex flex-col flex-grow space-y-4">
               <ScrollArea className="flex-grow h-64 border rounded-md p-3" ref={conversationScrollAreaRef}>
-                {conversation.length === 0 && (
+                {conversation.length === 0 && !assistantProcessing && !isAssistantListening && (
                   <p className="text-muted-foreground text-center py-10">
                     Click the microphone to start talking to the Nedzo AI Assistant.
                   </p>
@@ -582,7 +632,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
                         <span>Listening...</span>
                     </div>
                  )}
-                 {assistantProcessing && !isAssistantListening && ( // Show processing after listening stops
+                 {assistantProcessing && !isAssistantListening && ( 
                     <div className="flex items-center justify-center p-2 text-muted-foreground">
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         <span>Thinking...</span>
@@ -635,4 +685,3 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     </Dialog>
   );
 }
-
