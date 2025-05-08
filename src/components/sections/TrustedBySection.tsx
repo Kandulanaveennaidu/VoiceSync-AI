@@ -5,14 +5,16 @@ import { motion } from 'framer-motion';
 interface Partner {
   name: string;
   logoSrc: string;
+  width: number;
+  height: number;
   aiHint: string;
 }
 
 const partners: Partner[] = [
-  { name: 'Firebase Studio', logoSrc: 'https://picsum.photos/150/60?random=5', aiHint: 'firebase studio' },
-  { name: 'Google', logoSrc: 'https://picsum.photos/140/50?random=6', aiHint: 'google logo' },
-  { name: 'Adobe', logoSrc: 'https://picsum.photos/130/55?random=7', aiHint: 'adobe logo' },
-  { name: 'Microsoft', logoSrc: 'https://picsum.photos/160/50?random=8', aiHint: 'microsoft logo' },
+  { name: 'Firebase Studio', logoSrc: 'https://picsum.photos/150/60?random=5', width: 150, height: 60, aiHint: 'firebase studio' },
+  { name: 'Google', logoSrc: 'https://picsum.photos/140/50?random=6', width: 140, height: 50, aiHint: 'google logo' },
+  { name: 'Adobe', logoSrc: 'https://picsum.photos/130/55?random=7', width: 130, height: 55, aiHint: 'adobe logo' },
+  { name: 'Microsoft', logoSrc: 'https://picsum.photos/160/50?random=8', width: 160, height: 50, aiHint: 'microsoft logo' },
 ];
 
 const containerVariants = {
@@ -67,9 +69,9 @@ export default function TrustedBySection() {
               <Image
                 src={partner.logoSrc}
                 alt={`${partner.name} logo`}
-                width={150} 
-                height={60}
-                className="object-contain h-10 md:h-12"
+                width={partner.width} 
+                height={partner.height}
+                className="object-contain h-10 md:h-12" // This class scales the image to fit, respecting aspect ratio
                 data-ai-hint={partner.aiHint}
               />
             </motion.div>
@@ -79,3 +81,4 @@ export default function TrustedBySection() {
     </section>
   );
 }
+
