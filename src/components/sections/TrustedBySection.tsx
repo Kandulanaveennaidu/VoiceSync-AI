@@ -50,12 +50,12 @@ const partners: Partner[] = [
 
 const marqueeVariants = {
   animate: {
-    x: ['0%', '-50%'], // Animate by half the width for seamless loop with doubled content
+    x: ['0%', '-50%'], 
     transition: {
       x: {
         repeat: Infinity,
         repeatType: 'loop',
-        duration: 90, // Increased duration for smoother, slower scroll
+        duration: 90, 
         ease: 'linear',
       },
     },
@@ -63,11 +63,10 @@ const marqueeVariants = {
 };
 
 export default function TrustedBySection() {
-  // Duplicate partners for seamless looping: content should be [A, B, C, A, B, C]
   const duplicatedPartners = [...partners, ...partners];
 
   return (
-    <section className="py-16 bg-muted/30"> {/* Changed background color */}
+    <section className="py-16 bg-primary/[.05]"> {/* Changed background color */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.h2
           className="text-center text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-10"
@@ -86,10 +85,10 @@ export default function TrustedBySection() {
           >
             {duplicatedPartners.map((partner, index) => (
               <div
-                key={`${partner.name}-${index}`} // Ensure unique keys for duplicated items
+                key={`${partner.name}-${index}`} 
                 title={partner.name}
                 className="flex-shrink-0 w-48 h-24 mx-6 flex flex-col items-center justify-center text-center group"
-                data-ai-hint="company logo" // Added AI hint for potential image replacement
+                data-ai-hint="company logo" 
               >
                 <partner.Icon className="w-10 h-10 text-muted-foreground opacity-70 group-hover:opacity-100 group-hover:text-primary transition-all duration-300 mb-1" />
                 <span className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors duration-300 truncate w-full px-1">
@@ -103,3 +102,4 @@ export default function TrustedBySection() {
     </section>
   );
 }
+
