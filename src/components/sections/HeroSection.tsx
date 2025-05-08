@@ -54,18 +54,19 @@ export default function HeroSection() {
             variants={slideUp(0.4)}
           >
              <motion.div
-                className="animate-pulse-glow"
+                className="animate-pulse-glow" // This applies the pulse-glow animation
                 whileHover={{ scale: 1.02 }} 
                 whileTap={{ scale: 0.98 }}
               >
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="icon" // This size prop might be overridden by w-auto h-auto and padding
                   className="p-4 bg-gradient-to-br from-primary to-purple-600 dark:from-blue-500 dark:to-purple-700 rounded-full shadow-2xl w-auto h-auto hover:bg-gradient-to-br hover:from-primary/90 hover:to-purple-600/90 dark:hover:from-blue-500/90 dark:hover:to-purple-700/90 transition-all duration-300 ease-in-out"
                   onClick={() => setIsVoiceModalOpen(true)}
                   aria-label="Open Voice Tools"
                 >
-                  <Mic className="w-36 h-36 md:w-40 md:h-40 text-white" />
+                  {/* Increased icon size */}
+                  <Mic className="w-48 h-48 md:w-56 md:h-56 text-white" />
                 </Button>
               </motion.div>
           </motion.div>
