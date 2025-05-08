@@ -1,10 +1,19 @@
+
+"use client";
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, Lock, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 export default function EnterpriseSupportSection() {
   return (
-    <section className="py-20 bg-background animate-fade-in">
+    <motion.section 
+      className="py-20 bg-background"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.7 }}
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gradient-to-r from-[#0038FF] to-[#7F00FF] p-12 rounded-xl shadow-2xl text-center text-primary-foreground">
           <h2 className="text-4xl font-bold mb-6">Nedzo Enterprise</h2>
@@ -30,6 +39,6 @@ export default function EnterpriseSupportSection() {
           </Button>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

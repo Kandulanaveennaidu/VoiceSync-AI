@@ -1,6 +1,9 @@
+
+"use client";
 import { Button } from '@/components/ui/button';
 import { Globe } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 // A more stylized and animated representation of a world map
 const InteractiveWorldMap = () => {
@@ -20,12 +23,16 @@ const InteractiveWorldMap = () => {
   ];
 
   return (
-    <svg
+    <motion.svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 300 150" // Simplified viewBox for easier relative positioning
       className="w-full h-auto max-h-[400px]" // Control max height
       aria-labelledby="worldMapTitle"
       aria-describedby="worldMapDesc"
+      initial={{ opacity: 0, scale: 0.8 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true, amount: 0.5 }}
+      transition={{ duration: 0.8, delay: 0.4 }}
     >
       <title id="worldMapTitle">Abstract World Map</title>
       <desc id="worldMapDesc">An abstract, animated representation of the world map with glowing dots indicating global activity and presence.</desc>
@@ -67,32 +74,64 @@ const InteractiveWorldMap = () => {
           <circle cx={dot.cx} cy={dot.cy} r={dot.r} fill="hsl(var(--accent-foreground))" opacity="0.9" />
         </g>
       ))}
-    </svg>
+    </motion.svg>
   );
 };
 
 
 export default function GlobalTrustSection() {
   return (
-    <section className="py-20 bg-muted/30 animate-fade-in overflow-hidden">
+    <motion.section 
+      className="py-20 bg-muted/30 overflow-hidden"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.7 }}
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <Globe className="w-16 h-16 text-primary mx-auto mb-6" />
-        <h2 className="text-4xl font-bold text-foreground mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Globe className="w-16 h-16 text-primary mx-auto mb-6" />
+        </motion.div>
+        <motion.h2 
+          className="text-4xl font-bold text-foreground mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
           Safe and Efficient for Everyone, Worldwide
-        </h2>
-        <p className="text-lg text-muted-foreground mb-10 max-w-3xl mx-auto">
+        </motion.h2>
+        <motion.p 
+          className="text-lg text-muted-foreground mb-10 max-w-3xl mx-auto"
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
           Nedzo AI is built on a secure and scalable infrastructure, trusted by businesses globally to handle sensitive communications with utmost care and efficiency.
-        </p>
+        </motion.p>
         <div 
           className="relative mb-12 h-64 md:h-96" // Adjusted height
           data-ai-hint="interactive world map stylized"
         >
           <InteractiveWorldMap />
         </div>
-        <Button size="lg" asChild>
-          <Link href="#pricing">Build My FREE AI Voice Agent</Link>
-        </Button>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+        >
+          <Button size="lg" asChild>
+            <Link href="#pricing">Build My FREE AI Voice Agent</Link>
+          </Button>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }

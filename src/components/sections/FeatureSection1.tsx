@@ -1,7 +1,10 @@
+
+"use client";
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, BarChart2, Zap } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 const features = [
   {
@@ -18,12 +21,29 @@ const features = [
   },
 ];
 
+const sectionVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { staggerChildren: 0.2, duration: 0.5 } },
+};
+
+const itemVariants = {
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+};
+
 export default function FeatureSection1() {
   return (
-    <section id="features" className="py-20 bg-background overflow-hidden">
+    <motion.section 
+      id="features" 
+      className="py-20 bg-background overflow-hidden"
+      initial="initial"
+      whileInView="animate"
+      viewport={{ once: true, amount: 0.3 }}
+      variants={sectionVariants}
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="animate-slide-up">
+          <motion.div variants={itemVariants}>
             <Image
               src="https://picsum.photos/600/400"
               alt="HighLevel Dashboard Screenshot"
@@ -32,8 +52,8 @@ export default function FeatureSection1() {
               className="rounded-lg shadow-2xl object-cover"
               data-ai-hint="dashboard screenshot"
             />
-          </div>
-          <div className="animate-slide-up animation-delay-200">
+          </motion.div>
+          <motion.div variants={itemVariants}>
             <h2 className="text-4xl font-bold text-foreground mb-6">
               Qualify Leads Within Seconds
             </h2>
@@ -42,18 +62,24 @@ export default function FeatureSection1() {
             </p>
             <ul className="space-y-4 mb-10">
               {features.map((feature, index) => (
-                <li key={index} className="flex items-start space-x-3">
+                <motion.li 
+                  key={index} 
+                  className="flex items-start space-x-3"
+                  custom={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0, transition: { delay: 0.3 + index * 0.1, duration: 0.4 } }}
+                >
                   <span className="flex-shrink-0 mt-1">{feature.icon}</span>
                   <span className="text-muted-foreground">{feature.text}</span>
-                </li>
+                </motion.li>
               ))}
             </ul>
             <Button size="lg" asChild>
               <Link href="#pricing">Build My FREE AI Voice Agent</Link>
             </Button>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

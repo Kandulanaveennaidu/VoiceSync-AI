@@ -1,6 +1,7 @@
 
 "use client";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { motion } from 'framer-motion';
 
 interface FAQItem {
   id: string;
@@ -61,32 +62,67 @@ const staticFaqItems: FAQItem[] = [
   },
 ];
 
+const fadeIn = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.5 } },
+};
+
+const slideUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5, delay } },
+});
+
 export default function FaqSection() {
   return (
-    <section id="faq" className="py-20 bg-background animate-fade-in">
+    <motion.section 
+      id="faq" 
+      className="py-20 bg-background"
+      initial="initial"
+      whileInView="animate"
+      viewport={{ once: true, amount: 0.2 }}
+      variants={fadeIn}
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <motion.div 
+          className="text-center mb-16"
+          variants={slideUp(0)}
+        >
           <h2 className="text-4xl font-bold bg-gradient-to-r from-[#0038FF] to-[#7F00FF] bg-clip-text text-transparent mb-4">
             Frequently Asked Questions
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Find answers to common questions about Nedzo AI.
           </p>
-        </div>
+        </motion.div>
 
-        <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
-          {staticFaqItems.map((item) => (
-            <AccordionItem key={item.id} value={item.id} className="border-b border-border last:border-b-0">
-              <AccordionTrigger className="text-left hover:no-underline text-lg font-medium py-4">
-                {item.question}
-              </AccordionTrigger>
-              <AccordionContent className="pb-4 text-muted-foreground">
-                {item.answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <motion.div
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ staggerChildren: 0.1 }}
+        >
+          <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
+            {staticFaqItems.map((item, index) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+              >
+                <AccordionItem value={item.id} className="border-b border-border last:border-b-0">
+                  <AccordionTrigger className="text-left hover:no-underline text-lg font-medium py-4">
+                    {item.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 text-muted-foreground">
+                    {item.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              </motion.div>
+            ))}
+          </Accordion>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }
