@@ -31,12 +31,12 @@ export default function Header() {
   const navLinkTextColor = isScrolled ? 'text-muted-foreground hover:text-primary' : 'text-gray-200 hover:text-white';
 
   const iconAnimation = {
-    scale: [1, 1.08, 1, 1.03, 1],
+    scale: [1, 1.12], // Smoother zoom: 100% -> 112% -> 100%
     transition: {
-      duration: 2.5,
+      duration: 1.5, // Duration for one cycle (e.g., 1 to 1.12 and back to 1)
       repeat: Infinity,
       ease: "easeInOut",
-      repeatType: "mirror" as const // Ensure correct type for repeatType
+      repeatType: "mirror" as const 
     }
   };
 
