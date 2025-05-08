@@ -96,3 +96,19 @@
   background-position: bottom;
   background-size: cover;
 }
+
+/* Keyframes for map dot animation */
+@keyframes pulse-map-dot {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+.map-activity-dot {
+  animation: pulse-map-dot 2s infinite ease-in-out;
+}
