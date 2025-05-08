@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -7,25 +8,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Mic as MicIcon, AlertCircle, Volume2, UploadCloud, DownloadCloud, Copy, Settings2, SendHorizonal, User, Bot } from "lucide-react";
+import { Loader2, Mic as MicIcon, AlertCircle, Volume2, UploadCloud, DownloadCloud, Copy, Settings2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { TextToSpeechInput } from "@/ai/flows/text-to-speech-flow";
 import { textToSpeech } from "@/ai/flows/text-to-speech-flow";
 import { speechToText } from "@/ai/flows/speech-to-text-flow";
-import { getAgentResponse } from "@/ai/flows/conversational-agent-flow";
 import { useToast } from "@/hooks/use-toast"; 
-import { cn } from "@/lib/utils";
+
 
 interface VoiceToolsModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-interface ConversationMessage {
-  id: string;
-  speaker: 'user' | 'agent';
-  text: string;
 }
 
 export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProps) {
@@ -51,17 +44,6 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
   const audioChunksRef = useRef<Blob[]>([]);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
-
-  // Voice Assistant States
-  const [conversation, setConversation] = useState<ConversationMessage[]>([]);
-  const [isAssistantListening, setIsAssistantListening] = useState(false);
-  const [isAgentReplying, setIsAgentReplying] = useState(false); // TTS for agent
-  const [assistantProcessing, setAssistantProcessing] = useState(false); // Genkit call
-  const [assistantError, setAssistantError] = useState<string | null>(null);
-  const conversationScrollAreaRef = useRef<HTMLDivElement>(null);
-  const assistantAudioChunksRef = useRef<Blob[]>([]);
-  const assistantMediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const [assistantHasGreeted, setAssistantHasGreeted] = useState(false);
 
 
   useEffect(() => {
@@ -107,63 +89,8 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
         mediaRecorderRef.current.stop();
       }
-      if (assistantMediaRecorderRef.current && assistantMediaRecorderRef.current.state === "recording") {
-        assistantMediaRecorderRef.current.stop();
-      }
     };
   }, [selectedVoiceURI, audioPreviewUrl]);
-
-  useEffect(() => {
-    if (conversationScrollAreaRef.current) {
-      conversationScrollAreaRef.current.scrollTop = conversationScrollAreaRef.current.scrollHeight;
-    }
-  }, [conversation]);
-
-  // Effect for AI Assistant initial greeting
-  useEffect(() => {
-    if (activeTab === "assistant" && !assistantHasGreeted && !isAssistantListening && !assistantProcessing && !isAgentReplying && isOpen) {
-      const sendInitialGreeting = async () => {
-        setAssistantProcessing(true);
-        setAssistantError(null);
-        try {
-          const agentResponse = await getAgentResponse({ userMessage: "Hello" }); 
-          if (agentResponse.reply) {
-            setConversation(prev => [...prev, { id: `agent-greeting-${Date.now()}`, speaker: 'agent', text: agentResponse.reply }]);
-            setIsAgentReplying(true);
-            speakText(agentResponse.reply, 
-              () => {
-                setIsAgentReplying(false);
-                setAssistantHasGreeted(true); 
-              }, 
-              (err) => {
-                setAssistantError(`Agent TTS Error: ${err}`);
-                setIsAgentReplying(false);
-                setAssistantHasGreeted(true); 
-              }
-            );
-          } else {
-             setAssistantError("AI Assistant did not provide an initial greeting.");
-             setAssistantHasGreeted(true); 
-          }
-        } catch (error) {
-          console.error("Error sending initial greeting to assistant:", error);
-          const errMsg = error instanceof Error ? error.message : "Failed to get initial greeting.";
-          setAssistantError(`Assistant Error: ${errMsg}`);
-          toast({ title: "Assistant Error", description: errMsg, variant: "destructive" });
-          setAssistantHasGreeted(true); 
-        }
-        setAssistantProcessing(false);
-      };
-      sendInitialGreeting();
-    }
-    
-    if (activeTab !== "assistant" && isAgentReplying) {
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-        }
-        setIsAgentReplying(false);
-    }
-  }, [activeTab, assistantHasGreeted, isAssistantListening, assistantProcessing, isAgentReplying, isOpen, toast]);
 
 
   const handleSpeakTTS = async () => {
@@ -245,53 +172,6 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     stopRecordingLogic(mediaRecorderRef, setIsRecording);
   };
 
-
-  const startVoiceAssistantListening = async () => {
-    setAssistantError(null);
-    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
-    setIsAgentReplying(false);
-
-    await startRecordingLogic(assistantMediaRecorderRef, assistantAudioChunksRef, setIsAssistantListening, null, null, async (audioDataUri) => {
-      setAssistantProcessing(true); 
-      try {
-        const sttResult = await speechToText({ audioDataUri });
-        if (sttResult.transcript && sttResult.transcript.trim() !== "") {
-          setConversation(prev => [...prev, { id: `user-${Date.now()}`, speaker: 'user', text: sttResult.transcript }]);
-          
-          const agentResponse = await getAgentResponse({ userMessage: sttResult.transcript });
-          if (agentResponse.reply) {
-            setConversation(prev => [...prev, { id: `agent-${Date.now()}`, speaker: 'agent', text: agentResponse.reply }]);
-            setIsAgentReplying(true);
-            speakText(agentResponse.reply, () => setIsAgentReplying(false), (err) => {
-              setAssistantError(`Agent TTS Error: ${err}`);
-              setIsAgentReplying(false);
-            });
-          } else {
-            setAssistantError("AI Assistant did not provide a reply.");
-          }
-
-        } else {
-           setAssistantError("No speech detected or transcription was empty.");
-        }
-      } catch (error) {
-        console.error("Error in Voice Assistant flow:", error);
-        const errMsg = error instanceof Error ? error.message : "An unknown error occurred.";
-        setAssistantError(`Assistant Error: ${errMsg}`);
-        toast({ title: "Assistant Error", description: errMsg, variant: "destructive" });
-      }
-      setAssistantProcessing(false);
-    }, (err) => {
-      setAssistantError(err);
-      setIsAssistantListening(false); // Ensure listening state is false on error
-      toast({ title: "Microphone Error", description: err, variant: "destructive" });
-    });
-  };
-
-  const stopVoiceAssistantListening = () => {
-    stopRecordingLogic(assistantMediaRecorderRef, setIsAssistantListening);
-  };
-
-
   const startRecordingLogic = async (
     recorderRef: React.MutableRefObject<MediaRecorder | null>,
     chunksRef: React.MutableRefObject<Blob[]>,
@@ -354,9 +234,6 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
     if (recorderRef.current && recorderRef.current.state === "recording") {
       recorderRef.current.stop(); // This will trigger onstop
     }
-    // onstop handler will set IsRecState to false.
-    // Setting it here might be premature if onstop has async operations before it completes.
-    // However, for UI responsiveness, it can be set here, and onstop should ensure it's false too.
     setIsRecState(false);
   };
 
@@ -422,7 +299,7 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       setSttLoading(false);
       setSttError(null);
       setTranscript(null);
-      if (isRecording) stopRecordingLogic(mediaRecorderRef, setIsRecording); // Use stopRecordingLogic
+      if (isRecording) stopRecordingLogic(mediaRecorderRef, setIsRecording); 
       audioChunksRef.current = [];
       if (audioPreviewUrl) {
         URL.revokeObjectURL(audioPreviewUrl);
@@ -430,39 +307,29 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
       }
       setRecordedAudioBlob(null);
 
-      // Reset Assistant states
-      setConversation([]);
-      if(isAssistantListening) stopRecordingLogic(assistantMediaRecorderRef, setIsAssistantListening); // Use stopRecordingLogic
-      setIsAgentReplying(false);
-      setAssistantProcessing(false);
-      setAssistantError(null);
-      assistantAudioChunksRef.current = [];
-      setAssistantHasGreeted(false); // Reset greeting state
-
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps 
-  }, [isOpen]); // Primary dependency for cleanup is modal closing
+  }, [isOpen]); 
 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-xl md:max-w-2xl lg:max-w-xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl">AI Voice Tools</DialogTitle>
           <DialogDescription>
-            Experiment with Text-to-Speech, Speech-to-Text, and our AI Voice Assistant. 
+            Experiment with Text-to-Speech and Speech-to-Text. 
             Voice options are provided by your browser.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="flex-grow overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="tts">Text-to-Speech</TabsTrigger>
             <TabsTrigger value="stt">Speech-to-Text</TabsTrigger>
-            <TabsTrigger value="assistant">AI Voice Assistant</TabsTrigger>
           </TabsList>
           
           <TabsContent value="tts" className="flex-grow overflow-y-auto p-1 mt-0 space-y-4">
@@ -605,75 +472,6 @@ export default function VoiceToolsModal({ isOpen, onClose }: VoiceToolsModalProp
               )}
             </div>
           </TabsContent>
-
-          <TabsContent value="assistant" className="flex-grow overflow-y-auto p-1 mt-0 flex flex-col">
-            <div className="p-4 flex flex-col flex-grow space-y-4">
-              <ScrollArea className="flex-grow h-64 border rounded-md p-3" ref={conversationScrollAreaRef}>
-                {conversation.length === 0 && !assistantProcessing && !isAssistantListening && (
-                  <p className="text-muted-foreground text-center py-10">
-                    Click the microphone to start talking to the Nedzo AI Assistant.
-                  </p>
-                )}
-                {conversation.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={cn(
-                      "mb-3 p-3 rounded-lg max-w-[85%] flex items-start gap-2",
-                      msg.speaker === 'user' ? 'bg-primary/10 text-primary-foreground ml-auto rounded-br-none' : 'bg-muted text-foreground mr-auto rounded-bl-none'
-                    )}
-                  >
-                    {msg.speaker === 'user' ? <User className="h-5 w-5 text-primary flex-shrink-0"/> : <Bot className="h-5 w-5 text-accent flex-shrink-0" />}
-                    <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
-                  </div>
-                ))}
-                 {isAssistantListening && (
-                    <div className="flex items-center justify-center p-2 text-primary">
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        <span>Listening...</span>
-                    </div>
-                 )}
-                 {assistantProcessing && !isAssistantListening && ( 
-                    <div className="flex items-center justify-center p-2 text-muted-foreground">
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        <span>Thinking...</span>
-                    </div>
-                 )}
-                {isAgentReplying && (
-                    <div className="flex items-center justify-center p-2 text-accent">
-                        <Volume2 className="h-4 w-4 mr-2 animate-pulse" />
-                        <span>Speaking...</span>
-                    </div>
-                )}
-
-              </ScrollArea>
-              
-              {assistantError && (
-                <div className="p-3 bg-destructive/10 text-destructive rounded-md flex items-center">
-                  <AlertCircle className="h-5 w-5 mr-2" />
-                  <p className="text-sm">{assistantError}</p>
-                </div>
-              )}
-
-              <div className="mt-auto flex justify-center">
-                <Button
-                  onClick={isAssistantListening ? stopVoiceAssistantListening : startVoiceAssistantListening}
-                  disabled={assistantProcessing || isAgentReplying}
-                  size="lg"
-                  className={cn("rounded-full p-6 w-20 h-20", isAssistantListening ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90")}
-                  aria-label={isAssistantListening ? "Stop listening" : "Start listening"}
-                >
-                  {isAssistantListening ? (
-                    <MicIcon className="h-8 w-8 animate-pulse" />
-                  ) : assistantProcessing ? (
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  ) : (
-                    <MicIcon className="h-8 w-8" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-
         </Tabs>
 
         <DialogFooter className="mt-auto pt-4 border-t">
