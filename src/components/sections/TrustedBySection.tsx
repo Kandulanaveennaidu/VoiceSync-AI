@@ -1,4 +1,3 @@
-
 "use client";
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -10,10 +9,10 @@ interface Partner {
 }
 
 const partners: Partner[] = [
-  { name: 'Agency Alpha', logoSrc: 'https://picsum.photos/150/60?random=1', aiHint: 'modern agency' },
-  { name: 'Beta Solutions', logoSrc: 'https://picsum.photos/160/50?random=2', aiHint: 'tech company' },
-  { name: 'Gamma Growth', logoSrc: 'https://picsum.photos/140/65?random=3', aiHint: 'marketing firm' },
-  { name: 'Delta Digital', logoSrc: 'https://picsum.photos/155/55?random=4', aiHint: 'digital agency' },
+  { name: 'Firebase Studio', logoSrc: 'https://picsum.photos/150/60?random=5', aiHint: 'firebase studio' },
+  { name: 'Google', logoSrc: 'https://picsum.photos/140/50?random=6', aiHint: 'google logo' },
+  { name: 'Adobe', logoSrc: 'https://picsum.photos/130/55?random=7', aiHint: 'adobe logo' },
+  { name: 'Microsoft', logoSrc: 'https://picsum.photos/160/50?random=8', aiHint: 'microsoft logo' },
 ];
 
 const containerVariants = {
