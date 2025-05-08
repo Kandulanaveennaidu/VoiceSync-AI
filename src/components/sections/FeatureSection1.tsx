@@ -20,7 +20,7 @@ const features = [
 
 export default function FeatureSection1() {
   return (
-    <section className="py-20 bg-background overflow-hidden">
+    <section id="features" className="py-20 bg-background overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="animate-slide-up">
