@@ -58,7 +58,7 @@ const SoundwaveCanvas: React.FC = () => {
 
         p.draw = () => {
           if (!sketchRef.current) return;
-          p.background(0, 0, 0, 255); // Black background (RGBA)
+          p.clear(); // Clears the canvas, making it transparent
           
           waves.forEach(wave => {
             p.noFill();

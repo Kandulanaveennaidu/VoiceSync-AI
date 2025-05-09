@@ -26,7 +26,7 @@ export default function HeroSection() {
   return (
     <>
       <motion.section
-        className="relative pt-32 pb-20 md:pt-48 md:pb-32 text-foreground bg-black overflow-hidden" 
+        className="relative pt-32 pb-20 md:pt-48 md:pb-32 text-foreground bg-gradient-to-br from-primary via-purple-500 to-pink-500 overflow-hidden" 
         initial="initial"
         animate="animate"
         variants={fadeIn}
@@ -40,7 +40,7 @@ export default function HeroSection() {
             </Badge>
           </motion.div>
           <motion.h1
-            className="text-5xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 leading-tight"
+            className="text-5xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent dark:from-white dark:via-slate-200 dark:to-slate-400 leading-tight"
             variants={slideUp(0.2)}
           >
             AI Calls, Made Simple
@@ -63,7 +63,7 @@ export default function HeroSection() {
                 <Button
                   variant="ghost"
                   size="icon" 
-                  className="p-4 bg-gradient-to-br from-primary to-purple-600 dark:from-blue-500 dark:to-purple-700 rounded-full shadow-2xl w-auto h-auto hover:bg-gradient-to-br hover:from-primary/90 hover:to-purple-600/90 dark:hover:from-blue-500/90 dark:hover:to-purple-700/90 transition-all duration-300 ease-in-out"
+                  className="p-4 bg-gradient-to-br from-primary/70 to-purple-600/70 dark:from-blue-500/70 dark:to-purple-700/70 rounded-full shadow-2xl w-auto h-auto hover:bg-gradient-to-br hover:from-primary/80 hover:to-purple-600/80 dark:hover:from-blue-500/80 dark:hover:to-purple-700/80 transition-all duration-300 ease-in-out backdrop-blur-sm bg-white/10"
                   onClick={() => setIsVoiceModalOpen(true)}
                   aria-label="Open Voice Tools"
                 >
@@ -72,7 +72,7 @@ export default function HeroSection() {
               </motion.div>
           </motion.div>
           <motion.div variants={slideUp(0.5)}>
-            <Button size="lg" asChild className="text-lg px-10 py-6">
+            <Button size="lg" asChild className="text-lg px-10 py-6 bg-white text-primary hover:bg-slate-200">
               <Link href="#pricing">Try Free</Link>
             </Button>
           </motion.div>
@@ -82,4 +82,3 @@ export default function HeroSection() {
     </>
   );
 }
-
