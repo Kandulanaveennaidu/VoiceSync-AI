@@ -40,12 +40,12 @@ export default function FeatureSection2() {
           <motion.div className="md:order-2" variants={itemVariantsRight}>
             <div className="relative">
               <Image
-                src="https://picsum.photos/600/450"
-                alt="AI Calendar Booking Screenshot"
+                src="https://picsum.photos/600/450?random=2" // Changed to random for variety
+                alt="AI Calendar Booking integration"
                 width={600}
                 height={450}
                 className="rounded-lg shadow-2xl object-cover"
-                data-ai-hint="calendar screenshot"
+                data-ai-hint="AI scheduling" // Updated data-ai-hint
               />
               <motion.div 
                 className="absolute -bottom-4 -right-4 md:-bottom-6 md:-right-6 bg-primary text-primary-foreground p-4 rounded-lg shadow-xl"
@@ -90,3 +90,4 @@ export default function FeatureSection2() {
     </motion.section>
   );
 }
+

@@ -45,12 +45,12 @@ export default function FeatureSection1() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <motion.div variants={itemVariants}>
             <Image
-              src="https://picsum.photos/600/400"
-              alt="HighLevel Dashboard Screenshot"
+              src="https://picsum.photos/600/400?random=1" // Changed to random for variety
+              alt="AI Voice Agent qualifying leads"
               width={600}
               height={400}
               className="rounded-lg shadow-2xl object-cover"
-              data-ai-hint="dashboard screenshot"
+              data-ai-hint="AI voice agent" // Updated data-ai-hint
             />
           </motion.div>
           <motion.div variants={itemVariants}>
@@ -83,3 +83,4 @@ export default function FeatureSection1() {
     </motion.section>
   );
 }
+
