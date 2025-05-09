@@ -1,11 +1,9 @@
 
 'use client';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Mic, Star } from 'lucide-react';
 import Link from 'next/link';
-import VoiceToolsModal from '@/components/modals/VoiceToolsModal';
 import { motion } from 'framer-motion';
 import SoundwaveCanvas from '@/components/effects/SoundwaveCanvas';
 
@@ -21,7 +19,7 @@ const slideUp = (delay = 0) => ({
 
 
 export default function HeroSection() {
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  // VoiceToolsModal functionality removed as per user request
 
   return (
     <>
@@ -64,10 +62,11 @@ export default function HeroSection() {
                   variant="ghost"
                   size="icon" 
                   className="p-4 bg-gradient-to-br from-primary/70 to-purple-600/70 dark:from-blue-500/70 dark:to-purple-700/70 rounded-full shadow-2xl w-auto h-auto hover:bg-gradient-to-br hover:from-primary/80 hover:to-purple-600/80 dark:hover:from-blue-500/80 dark:hover:to-purple-700/80 transition-all duration-300 ease-in-out backdrop-blur-sm bg-white/10"
-                  onClick={() => setIsVoiceModalOpen(true)}
-                  aria-label="Open Voice Tools"
+                  // onClick removed to disable modal opening
+                  aria-label="Voice Icon" 
                 >
-                  <Mic className="w-64 h-64 md:w-72 md:h-72 text-white" />
+                  {/* Increased size and changed color of Mic icon */}
+                  <Mic className="w-72 h-72 md:w-80 md:h-80 text-primary" />
                 </Button>
               </motion.div>
           </motion.div>
@@ -78,7 +77,8 @@ export default function HeroSection() {
           </motion.div>
         </div>
       </motion.section>
-      <VoiceToolsModal isOpen={isVoiceModalOpen} onClose={() => setIsVoiceModalOpen(false)} />
+      {/* VoiceToolsModal component removed as per user request */}
     </>
   );
 }
+
