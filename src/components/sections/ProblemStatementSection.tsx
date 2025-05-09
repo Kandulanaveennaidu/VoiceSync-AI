@@ -5,20 +5,20 @@ import { Users, UserX, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const problems = [
-  {
+ {
     icon: <UserX className="w-10 h-10 text-primary mb-4" />,
     title: 'Low Client Retention',
-    description: 'Struggling to keep clients engaged and satisfied due to missed calls or slow lead follow-up?',
-  },
-  {
+    description: 'Agencies often face challenges in maintaining consistent client engagement and satisfaction, leading to potential churn due to missed opportunities or delayed responses.',
+ },
+ {
     icon: <Users className="w-10 h-10 text-primary mb-4" />,
     title: 'Painful Hiring',
-    description: 'Finding, training, and managing call center staff is expensive and time-consuming.',
-  },
-  {
+    description: 'The process of recruiting, onboarding, and managing skilled call center personnel is a significant and costly operational hurdle.',
+ },
+ {
     icon: <TrendingUp className="w-10 h-10 text-primary mb-4" />,
     title: 'Growing Your Agency',
-    description: 'Scaling your call operations to handle more leads is a bottleneck for agency growth.',
+    description: 'Scaling inbound and outbound call operations efficiently to accommodate increasing lead volume presents a substantial barrier to agency expansion and profitability.',
   },
 ];
 
@@ -44,13 +44,13 @@ export default function ProblemStatementSection() {
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.5 }}
           className="text-4xl font-bold text-center text-foreground mb-4"
-        >
-          Your Leads Are Draining Your Agency
+ >
+          Key Challenges for Modern Agencies
         </motion.h2>
         <motion.p 
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.5 }}
+          viewport={{ once: true, amount: 0.5}}
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-lg text-muted-foreground text-center mb-16 max-w-2xl mx-auto"
         >

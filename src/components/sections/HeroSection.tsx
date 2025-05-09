@@ -40,32 +40,32 @@ export default function HeroSection() {
             className="text-5xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent dark:from-white dark:via-slate-200 dark:to-slate-400 leading-tight"
             variants={slideUp(0.2)}
           >
-            AI Calls, Made Simple
+            Transform Your Agency with Intelligent Voice Automation
           </motion.h1>
           <motion.p
             className="text-xl md:text-2xl text-white/90 dark:text-gray-200/90 mb-10 max-w-3xl mx-auto"
             variants={slideUp(0.3)}
           >
-            The Future of Communication. Empower your agency with intelligent voice agents that qualify leads, book meetings, and scale your business 24/7.
+            Empower your agency with cutting-edge voice agents that expertly qualify leads, efficiently book appointments, and significantly scale your operations around the clock.
           </motion.p>
           <motion.div
             className="flex justify-center items-center space-x-4 mb-12"
             variants={slideUp(0.4)}
           >
-             <motion.div
-                className="animate-pulse-glow"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+            <motion.div
+              className="animate-pulse-glow"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                className="p-4 bg-gradient-to-br from-primary/70 to-purple-600/70 dark:from-blue-500/70 dark:to-purple-700/70 rounded-full shadow-2xl w-auto h-auto hover:bg-gradient-to-br hover:from-primary/80 hover:to-purple-600/80 dark:hover:from-blue-500/80 dark:hover:to-purple-700/80 transition-all duration-300 ease-in-out backdrop-blur-sm bg-white/10"
+                aria-label="Voice Icon"
               >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="p-4 bg-gradient-to-br from-primary/70 to-purple-600/70 dark:from-blue-500/70 dark:to-purple-700/70 rounded-full shadow-2xl w-auto h-auto hover:bg-gradient-to-br hover:from-primary/80 hover:to-purple-600/80 dark:hover:from-blue-500/80 dark:hover:to-purple-700/80 transition-all duration-300 ease-in-out backdrop-blur-sm bg-white/10"
-                  aria-label="Voice Icon"
-                >
-                  <Mic className="w-48 h-48 md:w-56 md:h-56 text-primary" />
-                </Button>
-              </motion.div>
+                <Mic className="w-64 h-64 md:w-80 md:h-80 text-primary" />
+              </Button>
+            </motion.div>
           </motion.div>
           <motion.div variants={slideUp(0.5)}>
             <Button size="lg" asChild className="text-lg px-10 py-6 bg-white text-primary hover:bg-slate-200">

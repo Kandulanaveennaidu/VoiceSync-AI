@@ -8,23 +8,23 @@ import { motion } from 'framer-motion';
 const values = [
   {
     icon: <Zap className="w-8 h-8 text-primary" />,
-    title: 'Boost Efficiency',
-    description: 'Automate repetitive call tasks and free up your human agents for high-value interactions.',
+    title: 'Operational Efficiency',
+    description: 'Streamline workflows by automating routine communication tasks, allowing your team to focus on strategic initiatives and client relationships.',
   },
   {
     icon: <DollarSign className="w-8 h-8 text-primary" />,
-    title: 'Reduce Costs',
-    description: 'Significantly lower operational expenses related to hiring, training, and managing call staff.',
+    title: 'Cost Optimization',
+    description: 'Achieve substantial reductions in overhead associated with traditional call handling, including staffing, training, and infrastructure.',
   },
   {
     icon: <Users className="w-8 h-8 text-primary" />,
-    title: 'Improve Lead Conversion',
-    description: 'Ensure every lead is contacted promptly and professionally, increasing your conversion rates.',
+    title: 'Enhanced Lead Qualification',
+    description: 'Implement consistent, prompt, and intelligent engagement with every lead, significantly improving qualification rates and pipeline velocity.',
   },
   {
     icon: <Award className="w-8 h-8 text-primary" />,
-    title: 'Enhance Client Satisfaction',
-    description: 'Provide consistent, 24/7 support and follow-up, delighting your clients.',
+    title: 'Superior Client Engagement',
+    description: 'Deliver always-on, professional communication that ensures no client interaction is missed, fostering loyalty and increasing satisfaction.',
   },
 ];
 
